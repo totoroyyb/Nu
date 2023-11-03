@@ -1,13 +1,7 @@
-commit ff005c77d76c18c514be6c88f52cb91b530a4868
-Author: Jianfeng Wang <pkueewjf@gmail.com>
-Date:   Thu Nov 2 17:56:57 2023 -0700
-
-    nsl cluster prep
-
-diff --git a/caladan/iokernel/hw_timestamp.c b/caladan/iokernel/hw_timestamp.c
+diff --git a/iokernel/hw_timestamp.c b/iokernel/hw_timestamp.c
 index 71c1b28..b0f3702 100644
---- a/caladan/iokernel/hw_timestamp.c
-+++ b/caladan/iokernel/hw_timestamp.c
+--- a/iokernel/hw_timestamp.c
++++ b/iokernel/hw_timestamp.c
 @@ -87,7 +87,7 @@ int hw_timestamp_init(void)
  	}
  
@@ -17,10 +11,10 @@ index 71c1b28..b0f3702 100644
  			continue;
  
  		if (!nic_pci_addr_str)
-diff --git a/caladan/runtime/net/directpath/common.c b/caladan/runtime/net/directpath/common.c
+diff --git a/runtime/net/directpath/common.c b/runtime/net/directpath/common.c
 index df11a39..1d315ef 100644
---- a/caladan/runtime/net/directpath/common.c
-+++ b/caladan/runtime/net/directpath/common.c
+--- a/runtime/net/directpath/common.c
++++ b/runtime/net/directpath/common.c
 @@ -52,7 +52,7 @@ REGISTER_CFG(directpath_pci_handler);
  size_t directpath_rx_buf_pool_sz(unsigned int nrqs)
  {
@@ -30,10 +24,10 @@ index df11a39..1d315ef 100644
  	return align_up(buflen, PGSIZE_2MB);
  }
  
-diff --git a/caladan/runtime/net/directpath/mlx5/mlx5_init.c b/caladan/runtime/net/directpath/mlx5/mlx5_init.c
+diff --git a/runtime/net/directpath/mlx5/mlx5_init.c b/runtime/net/directpath/mlx5/mlx5_init.c
 index bf447ac..db8e0eb 100644
---- a/caladan/runtime/net/directpath/mlx5/mlx5_init.c
-+++ b/caladan/runtime/net/directpath/mlx5/mlx5_init.c
+--- a/runtime/net/directpath/mlx5/mlx5_init.c
++++ b/runtime/net/directpath/mlx5/mlx5_init.c
 @@ -379,7 +379,7 @@ int mlx5_common_init(struct hardware_q **rxq_out, struct direct_txq **txq_out,
  	}
  

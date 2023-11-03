@@ -34,14 +34,14 @@ function kill_iokerneld {
 function run_iokerneld {
     kill_iokerneld
     sleep 3
-    sudo bash -c "$CALADAN_PATH/iokerneld $@ > /dev/null 2>&1 &"
+    sudo bash -c "$CALADAN_PATH/iokerneld ias noht > /dev/null 2>&1 &"
     assert_success
     sleep 5
 }
 
 function rerun_iokerneld {
     kill_iokerneld
-    run_iokerneld ias
+    run_iokerneld
 }
 
 function run_controller {

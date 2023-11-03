@@ -3,7 +3,7 @@
 SETUP_SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 function get_nic_dev {
-    sudo bash -c "$SETUP_SCRIPT_DIR/caladan/iokerneld >.tmp 2>&1 &"
+    sudo bash -c "$SETUP_SCRIPT_DIR/caladan/iokerneld ias noht >.tmp 2>&1 &"
     ( tail -f -n0 .tmp & ) | grep -q "MAC"
     sudo pkill -9 iokerneld
     mac=`cat .tmp | grep "MAC" | sed "s/.*MAC: \(.*\)/\1/g" | tr " " ":"`
