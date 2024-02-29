@@ -13,3 +13,6 @@
 [submodule "caladan/spdk"]
 	path = caladan/spdk
 	url = https://github.com/spdk/spdk.git
+[submodule "opentelemetry-cpp"]
+	path = opentelemetry-cpp
+	url = https://github.com/totoroyyb/Nu.git
