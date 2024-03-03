@@ -5,11 +5,31 @@ include $(CALADAN_PATH)/build/shared.mk
 
 NCORES = $(shell nproc)
 
-INC += -Iinc -I$(CALADAN_PATH)/bindings/cc -I$(CALADAN_PATH)/ksched -I/usr/include/libnl3/
+# OpenTelemetry settings
+OPENTELEMETRY_ROOT := ./opentelemetry-cpp
+OPENTELEMETRY_INCLUDES := -I$(OPENTELEMETRY_ROOT)/api/include \
+                          -I$(OPENTELEMETRY_ROOT)/sdk/include \
+                          -I$(OPENTELEMETRY_ROOT)/sdk/src \
+                          -I$(OPENTELEMETRY_ROOT)/exporters/ostream/include
+
+OPENTELEMETRY_LIBS_DIR := $(OPENTELEMETRY_ROOT)/build
+OPENTELEMETRY_LIBS := -L$(OPENTELEMETRY_LIBS_DIR)/sdk/src/common \
+                     -L$(OPENTELEMETRY_LIBS_DIR)/sdk/src/trace \
+                     -L$(OPENTELEMETRY_LIBS_DIR)/exporters/ostream \
+                     -L$(OPENTELEMETRY_LIBS_DIR)/sdk/src/resource \
+										 -lopentelemetry_common \
+										 -lopentelemetry_trace \
+										 -lopentelemetry_exporter_ostream_span \
+										 -lopentelemetry_resources
+
+INC += -Iinc -I$(CALADAN_PATH)/bindings/cc -I$(CALADAN_PATH)/ksched -I/usr/include/libnl3/ \
+			$(OPENTELEMETRY_INCLUDES)
 
 override CXXFLAGS += -DNCORES=$(NCORES) -ftemplate-backtrace-limit=0
 override LDFLAGS += -lcrypto -lpthread -lboost_program_options -lnuma -Wno-stringop-overread \
-                    -Wno-alloc-size-larger-than -ldl
+                    -Wno-alloc-size-larger-than \
+			$(OPENTELEMETRY_LIBS) \
+			-ldl
 
 librt_libs = $(CALADAN_PATH)/bindings/cc/librt++.a
 
@@ -122,6 +142,11 @@ bin/test_continuous_migrate bin/test_interproclet
 	@$(CXX) $(CXXFLAGS) $< -MM -MT $(@:.d=.o) >$@
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# %.d: %.cpp
+# 	@$(CXX) $(CXXFLAGS) $< -MM -MT $(@:.d=.o) >$@
+# %.o: %.cpp
+# 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 bin/test_interproclet: $(test_interproclet_obj) $(librt_libs) $(RUNTIME_DEPS) $(lib_obj)
 	$(LDXX) -o $@ $(test_interproclet_obj) $(lib_obj) $(librt_libs) $(RUNTIME_LIBS) $(LDFLAGS)

@@ -31,12 +31,41 @@ extern "C" {
 #include "nu/runtime.hpp"
 #include "nu/utils/slab.hpp"
 
+#include "opentelemetry/exporters/ostream/span_exporter_factory.h"
+#include "opentelemetry/sdk/trace/exporter.h"
+#include "opentelemetry/sdk/trace/processor.h"
+#include "opentelemetry/sdk/trace/simple_processor_factory.h"
+#include "opentelemetry/sdk/trace/tracer_provider_factory.h"
+#include "opentelemetry/trace/provider.h"
+namespace trace_api = opentelemetry::trace;
+namespace trace_sdk = opentelemetry::sdk::trace;
+namespace trace_exporter = opentelemetry::exporter::trace;
+
+namespace {
+  void InitTracer() {
+    auto exporter  = trace_exporter::OStreamSpanExporterFactory::Create();
+    auto processor = trace_sdk::SimpleSpanProcessorFactory::Create(std::move(exporter));
+    std::shared_ptr<opentelemetry::trace::TracerProvider> provider =
+      trace_sdk::TracerProviderFactory::Create(std::move(processor));
+    //set the global trace provider
+    trace_api::Provider::SetTracerProvider(provider);
+  }
+  void CleanupTracer() {
+    std::shared_ptr<opentelemetry::trace::TracerProvider> none;
+    trace_api::Provider::SetTracerProvider(none);
+  }
+}
+
 namespace nu {
 
 Runtime::Runtime() {}
 
 Runtime::Runtime(uint32_t remote_ctrl_ip, Mode mode, lpid_t lpid, bool isol) {
+  InitTracer();
   init_base();
+
+  auto tracer = opentelemetry::trace::Provider::GetTracerProvider()->GetTracer("my-app-tracer");
+  auto span = tracer->StartSpan("init runtime");
 
   if (mode == kMainServer) {
     init_as_server(remote_ctrl_ip, lpid, isol);
@@ -51,9 +80,11 @@ Runtime::Runtime(uint32_t remote_ctrl_ip, Mode mode, lpid_t lpid, bool isol) {
 
     caladan_->thread_park();
   }
+  span->End();
 }
 
 Runtime::~Runtime() {
+  CleanupTracer();
   destroy();
   destroy_base();
 }
