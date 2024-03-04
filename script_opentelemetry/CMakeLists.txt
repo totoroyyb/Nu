@@ -15,14 +15,35 @@ endif()
 
 project(opentelemetry-cpp)
 
-# Enable LTO
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-# Set the C++ standard
-set(CMAKE_CXX_STANDARD 23)
-# Enable GNU extensions
-set(CMAKE_CXX_EXTENSIONS ON)
-# Make the C++ standard a requirement
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+option(FOR_NU "Whether to build for later Nu linkage" ON)
+option(ENABLE_LTO "Whether to enable LTO/IPO" ON)
+
+if (FOR_NU)
+  if (ENABLE_LTO)
+    # Enable LTO
+    # Set policy CMP0069 to NEW to enable IPO properly
+    if(POLICY CMP0069)
+      cmake_policy(SET CMP0069 NEW)
+    endif()
+
+    # Now, enable IPO for your project or specific targets as needed
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported OUTPUT error)
+
+    if(ipo_supported)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else()
+        message(STATUS "IPO/LTO not supported: ${error}")
+    endif()
+  endif()
+
+  # Set the C++ standard
+  set(CMAKE_CXX_STANDARD 23)
+  # Enable GNU extensions
+  set(CMAKE_CXX_EXTENSIONS ON)
+  # Make the C++ standard a requirement
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
 
 # Mark variables as used so cmake doesn't complain about them
 mark_as_advanced(CMAKE_TOOLCHAIN_FILE)

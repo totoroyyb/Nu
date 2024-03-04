@@ -18,9 +18,9 @@ OPENTELEMETRY_LIBS := -L$(OPENTELEMETRY_LIBS_DIR)/sdk/src/common \
                      -L$(OPENTELEMETRY_LIBS_DIR)/exporters/ostream \
                      -L$(OPENTELEMETRY_LIBS_DIR)/sdk/src/resource \
 										 -lopentelemetry_common \
-										 -lopentelemetry_trace \
-										 -lopentelemetry_exporter_ostream_span \
-										 -lopentelemetry_resources
+										 -lopentelemetry_trace -lopentelemetry_common \
+										 -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
+										 -lopentelemetry_resources -lopentelemetry_common
 
 INC += -Iinc -I$(CALADAN_PATH)/bindings/cc -I$(CALADAN_PATH)/ksched -I/usr/include/libnl3/ \
 			$(OPENTELEMETRY_INCLUDES)

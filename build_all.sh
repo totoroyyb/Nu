@@ -25,10 +25,14 @@ cd caladan
 ./build.sh
 cd ..
 
+# Build opentelemetry
+pushd script_opentelemetry
+./build_opentelemetry.sh
+popd
+
 # Build Nu.
 make clean
 make -j`nproc`
 
 # Setup Nu.
 ./setup.sh
-
