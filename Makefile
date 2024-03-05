@@ -28,8 +28,8 @@ INC += -Iinc -I$(CALADAN_PATH)/bindings/cc -I$(CALADAN_PATH)/ksched -I/usr/inclu
 override CXXFLAGS += -DNCORES=$(NCORES) -ftemplate-backtrace-limit=0
 override LDFLAGS += -lcrypto -lpthread -lboost_program_options -lnuma -Wno-stringop-overread \
                     -Wno-alloc-size-larger-than \
-			$(OPENTELEMETRY_LIBS) \
-			-ldl
+					-ldl
+# $(OPENTELEMETRY_LIBS)
 
 librt_libs = $(CALADAN_PATH)/bindings/cc/librt++.a
 
