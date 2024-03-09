@@ -38,6 +38,8 @@ struct NodeStatus {
   bool has_enough_mem_resource(Resource resource) const;
   bool has_enough_resource(Resource resource) const;
   void update_free_resource(Resource resource);
+  
+  std::string to_string() const;
 };
 
 struct Node {

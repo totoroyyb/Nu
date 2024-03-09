@@ -100,6 +100,16 @@ void write_options_to_file(std::string path, const AllOptionsDesc &desc) {
   if (!desc.vm.count("nocpups")) {
     ofs << "runtime_react_cpu_pressure 1" << std::endl;
   }
+
+  // std::string new_path = "copy_conf";
+  // write_options_to_file(new_path, desc.caladan);
+  // std::ofstream new_ofs(new_path, std::ios_base::app);
+  // if (!desc.vm.count("nomemps")) {
+  //   new_ofs << "runtime_react_mem_pressure 1" << std::endl;
+  // }
+  // if (!desc.vm.count("nocpups")) {
+  //   new_ofs << "runtime_react_cpu_pressure 1" << std::endl;
+  // }
 }
 
 void write_options_to_file(std::string path, const CaladanOptionsDesc &desc) {

@@ -14,6 +14,8 @@ extern "C" {
 #include "nu/proclet_mgr.hpp"
 #include "nu/stack_manager.hpp"
 
+#include "nu/utils/utils.hpp"
+
 namespace nu {
 
 inline SlabAllocator *Runtime::runtime_slab() { return runtime_slab_; }
@@ -123,6 +125,13 @@ Runtime::__run_within_proclet_env(void *proclet_base, void (*fn)(A0s...),
     return false;
   }
   auto &migration_guard = *optional_migration_guard;
+
+  nu::utils::function_traits<decltype(fn)>::print_signature();
+
+  auto proclet_id = to_proclet_id(proclet_header);
+  auto ip_addr = nu::utils::IPUtils::int32_to_str(get_cfg_ip());
+  std::cout << "Run Proclet " << proclet_id << " on " << ip_addr << std::endl;
+  std::cout << "Run Proclet... Original thread creator ip: " << nu::utils::IPUtils::int32_to_str(thread_get_creator_ip()) << std::endl;
 
   auto *obj_ptr = get_current_root_obj<Cls>();
   fn(&migration_guard, obj_ptr, std::forward<A1s>(args)...);

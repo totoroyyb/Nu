@@ -174,6 +174,10 @@ int runtime_main_init(int argc, char **argv,
     write_options_to_file(conf_path, all_options_desc);
   }
 
+  // std::cout << "ctrl_ip: " << all_options_desc.nu.ctrl_ip_str << std::endl;
+  // std::cout << "isol: " << isol << std::endl;
+  // all_options_desc.desc.print(std::cout);
+
   auto ret = rt::RuntimeInit(conf_path, [&] {
     if (conf_path.starts_with(".conf_")) {
       BUG_ON(remove(conf_path.c_str()));

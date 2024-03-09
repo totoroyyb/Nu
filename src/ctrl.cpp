@@ -20,6 +20,8 @@ extern "C" {
 #include "nu/utils/future.hpp"
 #include "nu/utils/scoped_lock.hpp"
 
+#include "nu/utils/utils.hpp"
+
 namespace nu {
 
 constexpr NodeIP get_proclet_segment_bucket_id(uint64_t capacity) {
@@ -122,6 +124,15 @@ std::optional<std::pair<lpid_t, VAddrRange>> Controller::register_node(
 
   auto [iter, success] = node_statuses.try_emplace(ip, isol);
   BUG_ON(!success);
+
+  std::cout << "------" << std::endl;
+  std::cout << "Existing nodes (lpid = " << lpid << "):" << std::endl;
+  for (const auto &[node_ip, status] : node_statuses) {
+    auto ip_addr = nu::utils::IPUtils::int32_to_str(node_ip);
+    std::cout << "IP Addr: " << ip_addr << ", \nStatus: " << status.to_string() << std::endl;
+  }
+  std::cout << "------" << std::endl;
+
   return std::make_pair(lpid, stack_cluster);
 }
 

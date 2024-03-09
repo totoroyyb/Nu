@@ -21,6 +21,7 @@ class RPCClientMgr {
   RPCClient *get_by_proclet_id(ProcletID proclet_id);
   RPCClient *get_by_ip(NodeIP ip);
   NodeIP get_ip_by_proclet_id(ProcletID proclet_id);
+  std::string get_ip_str_by_proclet_id(ProcletID proclet_id);
   void remove_by_ip(NodeIP ip);
   void update_cache(ProcletID proclet_id, NodeIP ip);
   void invalidate_cache(ProcletID proclet_id, RPCClient *old_client);

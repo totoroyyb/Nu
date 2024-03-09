@@ -29,6 +29,12 @@ struct Resource {
     mem_mbs += o.mem_mbs;
     return *this;
   }
+
+  std::string to_string() const {
+    return "cores: " + std::to_string(cores) +
+           ", mem_mbs: " + std::to_string(mem_mbs);
+
+  }
 };
 
 struct VAddrRange {
