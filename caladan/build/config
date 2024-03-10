@@ -7,10 +7,10 @@ CONFIG_MLX4=n
 # Enable SPDK NVMe support
 CONFIG_SPDK=n
 # Enable debug build mode (slower but enables several runtime checks)
-CONFIG_DEBUG=n
+CONFIG_DEBUG=y
 # Enable additional compiler optimizations (may reduce compatibility)
 CONFIG_OPTIMIZE=y
 # Enable link-time optimization
-CONFIG_LTO=y
+CONFIG_LTO=n
 # Allow runtimes to access Mellanox ConnectX-5 NICs directly (kernel bypass)
 CONFIG_DIRECTPATH=y

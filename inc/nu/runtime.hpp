@@ -16,6 +16,14 @@ extern "C" {
 #include "nu/utils/archive_pool.hpp"
 #include "nu/utils/caladan.hpp"
 
+
+// #include "opentelemetry/exporters/ostream/span_exporter_factory.h"
+// #include "opentelemetry/sdk/trace/exporter.h"
+// #include "opentelemetry/sdk/trace/processor.h"
+// #include "opentelemetry/sdk/trace/simple_processor_factory.h"
+// #include "opentelemetry/sdk/trace/tracer_provider_factory.h"
+// #include "opentelemetry/trace/provider.h"
+
 namespace nu {
 
 struct ProcletHeader;

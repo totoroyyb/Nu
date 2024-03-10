@@ -1,0 +1,40 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "process",
+			"label": "build all",
+			"command": "make",
+			"args": [
+				"-j32"
+			],
+		},
+		{
+			"type": "process",
+			"label": "build test_interproclet",
+			"command": "make",
+			"args": [
+				"bin/test_interproclet"
+			],
+			"dependsOn": [
+				"build all"
+			],
+			"dependsOrder": "sequence",
+		},
+		{
+			"type": "process",
+			"label": "start nu runtime",
+			"command": "sudo ./scripts/start_rt.sh",
+		},
+		{
+			"type": "process",
+			"label": "prepare test_interproclet",
+			"command": "",
+			"dependsOn": [
+				"build test_interproclet",
+				"start nu runtime"
+			],
+			"dependsOrder": "sequence"
+		}
+	]
+}

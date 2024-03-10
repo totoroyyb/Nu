@@ -6,3 +6,5 @@ glibc
 bin/*
 *~
 .conf_*
+
+build/
