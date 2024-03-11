@@ -34,8 +34,11 @@ void ProcletServer::__construct_proclet(MigrationGuard *callee_guard, Cls *obj,
     std::apply([&](auto &&... args) { ((ia_sstream->ia >> args), ...); },
                *args);
 
-    std::cout << "__construct_proclet: " << std::endl;
-    std::cout << "\tCls: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
+    std::stringstream ss;
+    ss << "__construct_proclet: " << std::endl;
+    ss << "\tclass: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
+    DEBUG_P(ss.str());
+
     callee_guard->enable_for([&] {
       std::apply(
           [&](auto &&... args) { new (obj_space) Cls(std::move(args)...); },
@@ -108,8 +111,10 @@ void ProcletServer::construct_proclet_locally(MigrationGuard &&caller_guard,
     }
     caller_guard.reset();
 
-    std::cout << "local __construct_proclet: " << std::endl;
-    std::cout << "\tCls: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
+    std::stringstream ss;
+    ss << "local __construct_proclet: " << std::endl;
+    ss << "\tclass: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
+    DEBUG_P(ss.str());
 
     callee_guard.enable_for([&] {
       std::apply(
@@ -265,6 +270,12 @@ void ProcletServer::__run_closure(MigrationGuard *callee_guard, Cls *obj,
   std::tuple<std::decay_t<S1s>...> states;
   std::apply([&](auto &&... states) { ((ia_sstream->ia >> states), ...); },
              states);
+  
+  std::stringstream ss;
+  ss << "run closure on remote machine..." << std::endl;
+  ss << nu::utils::function_traits<FnPtr>::get_signature() << std::endl;
+  DEBUG_P(ss.str());
+
   auto apply_fn = [&] {
     std::apply(
         [&](auto &&... states) {
@@ -337,12 +348,9 @@ void ProcletServer::run_closure_locally(
   }
   callee_header->thread_cnt.inc_unsafe();
 
-  std::cout << "inside run_closure_locally..." << std::endl;
-  std::cout << "\tGetting runtime()" << std::endl;
   auto *obj = get_runtime()->get_root_obj<Cls>(to_proclet_id(callee_header));
 
   if constexpr (!std::is_same<RetT, void>::value) {
-    std::cout << "\tExecuting the function..." << std::endl;
     auto *ret = reinterpret_cast<RetT *>(alloca(sizeof(RetT)));
     std::apply(
         [&](auto &&...states) {
@@ -360,7 +368,6 @@ void ProcletServer::run_closure_locally(
       callee_header->cpu_load.end_monitor();
     }
 
-    std::cout << "\treattach_and_disable_migration..." << std::endl;
     auto optional_caller_guard = get_runtime()->reattach_and_disable_migration(
         caller_header, *callee_migration_guard);
     if (likely(optional_caller_guard)) {
@@ -374,7 +381,6 @@ void ProcletServer::run_closure_locally(
 
     RuntimeSlabGuard slab_guard;
 
-    std::cout << "\tget_oa_sstream..." << std::endl;
     auto *oa_sstream = get_runtime()->archive_pool()->get_oa_sstream();
     oa_sstream->oa << std::move(*ret);
     auto ss_view = oa_sstream->ss.view();
@@ -384,7 +390,6 @@ void ProcletServer::run_closure_locally(
     RPCReturnBuffer ret_val_buf(ret_val_span);
 
     std::destroy_at(ret);
-    std::cout << "\tdetach..." << std::endl;
     get_runtime()->detach();
     callee_migration_guard->reset();
 
