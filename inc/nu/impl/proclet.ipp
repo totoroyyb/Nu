@@ -34,6 +34,8 @@ inline void serialize(auto *oa_sstream, S1s &&... states) {
   ss.seekp(sizeof(RPCReqType));
 
   auto &oa = oa_sstream->oa;
+  uint64_t magic = 12345;
+  oa << magic;
   ((oa << std::forward<S1s>(states)), ...);
 }
 

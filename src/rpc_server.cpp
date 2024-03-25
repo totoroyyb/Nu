@@ -7,6 +7,8 @@
 #include "nu/proclet_server.hpp"
 #include "nu/utils/rpc.hpp"
 
+#include "nu/utils/utils.hpp"
+
 namespace nu {
 
 RPCServer::RPCServer()
@@ -77,6 +79,12 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
     // Proclet server
     case kProcletCall: {
       args = args.subspan(sizeof(RPCReqType));
+      uint64_t magic = from_span<uint64_t>(args);
+      std::stringstream ss;
+      ss << "Extracted magic number value: " << magic << std::endl;
+      DEBUG_P(ss.str()); 
+
+      args = args.subspan(sizeof(uint64_t));
       get_runtime()->proclet_server()->parse_and_run_handler(args, returner);
       break;
     }
