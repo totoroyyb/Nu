@@ -128,7 +128,7 @@ std::optional<std::pair<lpid_t, VAddrRange>> Controller::register_node(
   std::cout << "------" << std::endl;
   std::cout << "Existing nodes (lpid = " << lpid << "):" << std::endl;
   for (const auto &[node_ip, status] : node_statuses) {
-    auto ip_addr = nu::utils::IPUtils::int32_to_str(node_ip);
+    auto ip_addr = nu::utils::IPUtils::uint32_to_str(node_ip);
     std::cout << "IP Addr: " << ip_addr << ", \nStatus: " << status.to_string() << std::endl;
   }
   std::cout << "------" << std::endl;

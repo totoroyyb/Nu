@@ -131,10 +131,10 @@ Runtime::__run_within_proclet_env(void *proclet_base, void (*fn)(A0s...),
   DEBUG_P_ENDS();
 
   auto proclet_id = to_proclet_id(proclet_header);
-  auto ip_addr = nu::utils::IPUtils::int32_to_str(get_cfg_ip());
+  auto ip_addr = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
   std::stringstream output;
   output << "Run Proclet " << proclet_id << " on " << ip_addr << std::endl;
-  output << "Run Proclet... Original thread creator ip: " << nu::utils::IPUtils::int32_to_str(thread_get_creator_ip()) << std::endl;
+  output << "Run Proclet... Original thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
   std::string outputString = output.str();
   DEBUG_P(outputString);
 

@@ -85,7 +85,7 @@ NodeIP RPCClientMgr::get_ip_by_proclet_id(ProcletID proclet_id) {
 
 std::string RPCClientMgr::get_ip_str_by_proclet_id(ProcletID proclet_id) {
   auto ip_int = get_ip_by_proclet_id(proclet_id);
-  return nu::utils::IPUtils::int32_to_str(ip_int);
+  return nu::utils::IPUtils::uint32_to_str(ip_int);
 }
 
 void RPCClientMgr::invalidate_cache(ProcletID proclet_id, RPCClient *old_client) {

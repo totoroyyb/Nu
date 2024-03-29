@@ -1,13 +1,13 @@
 #include "nu/rpc_server.hpp"
 
 #include "nu/commons.hpp"
-#include "nu/runtime.hpp"
 #include "nu/ctrl_server.hpp"
 #include "nu/migrator.hpp"
 #include "nu/proclet_server.hpp"
+#include "nu/runtime.hpp"
 #include "nu/utils/rpc.hpp"
-
 #include "nu/utils/utils.hpp"
+#include <iostream> 
 
 namespace nu {
 
@@ -18,6 +18,8 @@ RPCServer::RPCServer()
 
 void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
   auto &rpc_type = from_span<RPCReqType>(args);
+  auto remote_addr = returner->GetRemoteAddr();
+  auto local_addr = returner->GetLocalAddr();
 
   switch (rpc_type) {
     // Migrator
@@ -79,12 +81,15 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
     // Proclet server
     case kProcletCall: {
       args = args.subspan(sizeof(RPCReqType));
-      uint64_t magic = from_span<uint64_t>(args);
+      auto meta = from_span<RPCReqProcletCallDebugMeta>(args);
+      uint64_t magic = meta.magic;
+      assert(magic == tMetaMagic);
       std::stringstream ss;
-      ss << "Extracted magic number value: " << magic << std::endl;
-      DEBUG_P(ss.str()); 
-
-      args = args.subspan(sizeof(uint64_t));
+      ss << "RIP: 0x" << std::hex << meta.rip << ", RSP: 0x" << std::hex << meta.rsp << std::endl;
+      ss << "Remote Addr: " << utils::IPUtils::uint32_to_str(remote_addr.ip) << ":" << std::dec << remote_addr.port << "; value: " << remote_addr.ip << std::endl;
+      ss << "Local Addr: " << utils::IPUtils::uint32_to_str(local_addr.ip) << ":" << std::dec << local_addr.port << "; value: " << local_addr.ip << std::endl;
+      DEBUG_P(ss.str());
+      args = args.subspan(sizeof(RPCReqProcletCallDebugMeta));
       get_runtime()->proclet_server()->parse_and_run_handler(args, returner);
       break;
     }

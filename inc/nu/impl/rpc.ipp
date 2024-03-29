@@ -12,6 +12,11 @@ class RPCServerWorker {
   void Return(RPCReturnCode rc, RPCReturnBuffer &&buf,
               std::size_t completion_data);
 
+  // Expose the TcpConn for an accessor on the local/remote IP addresses
+  ConnAddrPair GetRPCConnAddrPair();
+  netaddr GetLocalAddr();
+  netaddr GetRemoteAddr();
+
  private:
   // Internal worker threads for sending and receiving.
   void SendWorker();
@@ -43,6 +48,18 @@ inline void RPCServerWorker::Return(RPCReturnCode rc, RPCReturnBuffer &&buf,
   wake_sender_.Wake();
 }
 
+inline ConnAddrPair RPCServerWorker::GetRPCConnAddrPair() {
+  return ConnAddrPair{GetLocalAddr(), GetRemoteAddr()};
+}
+
+inline netaddr RPCServerWorker::GetLocalAddr() {
+  return this->c_->LocalAddr();
+}
+
+inline netaddr RPCServerWorker::GetRemoteAddr() {
+  return this->c_->RemoteAddr();
+}
+
 inline void RPCFlow::Call(std::span<const std::byte> src, RPCCompletion *c) {
   rt::SpinGuard guard(&lock_);
   reqs_.emplace(req_ctx{src, c});
@@ -52,7 +69,13 @@ inline void RPCFlow::Call(std::span<const std::byte> src, RPCCompletion *c) {
 }  // namespace rpc_internal
 
 inline RPCReturner::RPCReturner(void *rpc_server, std::size_t completion_data)
-    : rpc_server_(rpc_server), completion_data_(completion_data) {}
+    : completion_data_(completion_data) {
+  auto server =
+      reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server);
+  this->local_addr = server->GetLocalAddr();
+  this->remote_addr = server->GetRemoteAddr();
+  this->rpc_server_ = rpc_server;
+}
 
 inline void RPCReturner::Return(RPCReturnCode rc,
                                 std::span<const std::byte> buf,
@@ -67,6 +90,21 @@ inline void RPCReturner::Return(RPCReturnCode rc) {
   auto rpc_server =
       reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_);
   rpc_server->Return(rc, RPCReturnBuffer(), completion_data_);
+}
+
+inline ConnAddrPair RPCReturner::GetRPCAddrPair() {
+  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_); 
+  return server->GetRPCConnAddrPair();
+}
+
+inline netaddr RPCReturner::GetLocalAddr() {
+  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_); 
+  return server->GetLocalAddr();
+}
+
+inline netaddr RPCReturner::GetRemoteAddr() {
+  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_); 
+  return server->GetRemoteAddr();
 }
 
 inline RPCReturnCode RPCClient::Call(std::span<const std::byte> args,

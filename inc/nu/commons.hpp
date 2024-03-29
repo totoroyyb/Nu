@@ -12,6 +12,16 @@ namespace nu {
 #error Must indicate number of CPU cores
 #endif
 
+/// @brief  Added magic number for testing RPCRewqProcletCallDebugMeta
+constexpr static uint64_t tMetaMagic = 12345;
+
+/// @brief  Added data structure for backtrace
+struct RPCReqProcletCallDebugMeta {
+  uint64_t magic;
+  uintptr_t rip;
+  uintptr_t rsp;
+} __attribute__((packed));
+
 using ProcletID = uint64_t;
 using lpid_t = uint16_t;
 using SlabId_t = uint32_t;
