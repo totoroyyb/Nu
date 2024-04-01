@@ -5,6 +5,7 @@
 #include <sstream>
 #include <type_traits>
 #include <utility>
+#include <unistd.h>
 
 extern "C" {
 #include <base/assert.h>
@@ -51,7 +52,8 @@ inline void serialize_embeded(auto *oa_sstream, S1s &&... states) {
   auto meta = RPCReqProcletCallDebugMeta{
     tMetaMagic,
     rip,
-    rsp
+    rsp,
+    getpid()
   };
   serialize(oa_sstream, meta, std::forward<S1s>(states)...);
 }

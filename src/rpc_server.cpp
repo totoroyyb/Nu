@@ -18,8 +18,8 @@ RPCServer::RPCServer()
 
 void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
   auto &rpc_type = from_span<RPCReqType>(args);
-  auto remote_addr = returner->GetRemoteAddr();
-  auto local_addr = returner->GetLocalAddr();
+  __attribute__((used)) auto remote_addr = returner->GetRemoteAddr();
+  __attribute__((used)) auto local_addr = returner->GetLocalAddr();
 
   switch (rpc_type) {
     // Migrator
@@ -81,13 +81,14 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
     // Proclet server
     case kProcletCall: {
       args = args.subspan(sizeof(RPCReqType));
-      auto meta = from_span<RPCReqProcletCallDebugMeta>(args);
+      __attribute__((used)) auto meta = from_span<RPCReqProcletCallDebugMeta>(args);
       uint64_t magic = meta.magic;
       assert(magic == tMetaMagic);
       std::stringstream ss;
       ss << "RIP: 0x" << std::hex << meta.rip << ", RSP: 0x" << std::hex << meta.rsp << std::endl;
       ss << "Remote Addr: " << utils::IPUtils::uint32_to_str(remote_addr.ip) << ":" << std::dec << remote_addr.port << "; value: " << remote_addr.ip << std::endl;
       ss << "Local Addr: " << utils::IPUtils::uint32_to_str(local_addr.ip) << ":" << std::dec << local_addr.port << "; value: " << local_addr.ip << std::endl;
+      ss << "Parent PID: " << meta.pid << std::endl;
       DEBUG_P(ss.str());
       args = args.subspan(sizeof(RPCReqProcletCallDebugMeta));
       get_runtime()->proclet_server()->parse_and_run_handler(args, returner);

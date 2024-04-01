@@ -20,6 +20,7 @@ struct RPCReqProcletCallDebugMeta {
   uint64_t magic;
   uintptr_t rip;
   uintptr_t rsp;
+  pid_t pid;
 } __attribute__((packed));
 
 using ProcletID = uint64_t;
