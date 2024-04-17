@@ -38,6 +38,8 @@ extern "C" {
 
 namespace nu {
 
+static uint32_t ifa_ip_addr = 0x0;
+
 Runtime::Runtime() {}
 
 Runtime::Runtime(uint32_t remote_ctrl_ip, Mode mode, lpid_t lpid, bool isol) {
@@ -211,7 +213,7 @@ int runtime_main_init(int argc, char **argv,
 
 #ifdef DEBUG 
       std::cout << "----" << std::endl;
-      std::cout << "Interface " << ifa->ifa_name << "; host: " << host << "; raw ip: " << ip_addr << std::endl;
+      std::cout << "Interface " << ifa->ifa_name << "; host: " << host << "; raw ip: " << ifa_ip_addr << std::endl;
       std::cout << "----" << std::endl;
 #endif // DEBUG
       break;
