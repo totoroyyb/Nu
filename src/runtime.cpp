@@ -1,3 +1,11 @@
+#include <openssl/crypto.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
+#include <ifaddrs.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -5,9 +13,6 @@
 #include <fstream>
 #include <new>
 #include <string>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <openssl/crypto.h>
 
 extern "C" {
 #include <base/assert.h>
@@ -167,6 +172,7 @@ int runtime_main_init(int argc, char **argv,
                                                 : nu::Runtime::Mode::kServer;
   auto ctrl_ip = str_to_ip(all_options_desc.nu.ctrl_ip_str);
   auto lpid = all_options_desc.nu.lpid;
+  auto ifa_name = all_options_desc.nu.ifa_name;
   auto conf_path = all_options_desc.caladan.conf_path;
   auto isol = all_options_desc.vm.count("isol");
   if (conf_path.empty()) {
@@ -174,10 +180,51 @@ int runtime_main_init(int argc, char **argv,
     write_options_to_file(conf_path, all_options_desc);
   }
 
-  // std::cout << "ctrl_ip: " << all_options_desc.nu.ctrl_ip_str << std::endl;
-  // std::cout << "isol: " << isol << std::endl;
-  // all_options_desc.desc.print(std::cout);
+#ifdef DEBUG
+  std::cout << "ctrl_ip: " << all_options_desc.nu.ctrl_ip_str << std::endl;
+  std::cout << "isol: " << isol << std::endl;
+  std::cout << "ifa_name: " << ifa_name << std::endl;
+#endif // DEBUG
 
+  struct ifaddrs *ifaddr, *ifa;
+  int family, s;
+  char host[NI_MAXHOST];
+
+  if (getifaddrs(&ifaddr) == -1) {
+    perror("getifaddrs");
+    goto init_runtime;
+  }
+
+  for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr == nullptr) {
+      continue;
+    }
+
+    family = ifa->ifa_addr->sa_family;
+
+    if (strcmp(ifa->ifa_name, ifa_name.c_str()) == 0 && family == AF_INET) {  // AF_INET for IPv4
+      struct sockaddr_in *ipv4 = (struct sockaddr_in *)ifa->ifa_addr;
+      uint32_t ip_addr = ipv4->sin_addr.s_addr;
+      ifa_ip_addr = ip_addr;
+
+      inet_ntop(AF_INET, &(ipv4->sin_addr), host, NI_MAXHOST);
+
+#ifdef DEBUG 
+      std::cout << "----" << std::endl;
+      std::cout << "Interface " << ifa->ifa_name << "; host: " << host << "; raw ip: " << ip_addr << std::endl;
+      std::cout << "----" << std::endl;
+#endif // DEBUG
+      break;
+    }
+  }
+
+  freeifaddrs(ifaddr);
+  if (ifa_ip_addr == 0) {
+    std::cout << "ifa ip address is not initialized." << std::endl;
+    goto init_runtime;
+  }
+
+init_runtime:
   auto ret = rt::RuntimeInit(conf_path, [&] {
     if (conf_path.starts_with(".conf_")) {
       BUG_ON(remove(conf_path.c_str()));

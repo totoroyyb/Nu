@@ -35,6 +35,8 @@ class RPCReturner;
 class SlabAllocator;
 class Caladan;
 
+static uint32_t ifa_ip_addr = 0x0;
+
 struct RPCReqReserveConns {
   RPCReqType rpc_type = kReserveConns;
   uint32_t dest_server_ip;

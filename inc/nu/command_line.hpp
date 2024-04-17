@@ -23,6 +23,7 @@ struct OptionsDesc {
 struct NuOptionsDesc : public OptionsDesc {
   std::string ctrl_ip_str;
   lpid_t lpid;
+  std::string ifa_name;
 
   NuOptionsDesc(bool help = true);
 };
