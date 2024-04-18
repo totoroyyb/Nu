@@ -182,7 +182,9 @@ int runtime_main_init(int argc, char **argv,
   std::cout << "ifa_name: " << ifa_name << std::endl;
 #endif // DEBUG
 
+#ifdef DDB_SUPPORT
   populate_ddb_metadata(ifa_name);
+#endif
 
   auto ret = rt::RuntimeInit(conf_path, [&] {
     if (conf_path.starts_with(".conf_")) {

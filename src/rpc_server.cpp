@@ -18,8 +18,6 @@ RPCServer::RPCServer()
 
 void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
   auto &rpc_type = from_span<RPCReqType>(args);
-  // __attribute__((used)) auto remote_addr = returner->GetRemoteAddr();
-  // __attribute__((used)) auto local_addr = returner->GetLocalAddr();
 
   switch (rpc_type) {
     // Migrator
@@ -81,6 +79,7 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
     // Proclet server
     case kProcletCall: {
       args = args.subspan(sizeof(RPCReqType));
+#ifdef DDB_SUPPORT
       __attribute__((used)) auto meta = from_span<RPCReqProcletCallDebugMeta>(args);
       uint64_t magic = meta.magic;
       assert(magic == tMetaMagic);
@@ -93,6 +92,7 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
       DEBUG_P(ss.str());
 #endif
       args = args.subspan(sizeof(RPCReqProcletCallDebugMeta));
+#endif
       get_runtime()->proclet_server()->parse_and_run_handler(args, returner);
       break;
     }

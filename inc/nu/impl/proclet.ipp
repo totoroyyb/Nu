@@ -68,8 +68,11 @@ void Proclet<T>::invoke_remote(MigrationGuard &&caller_guard, ProcletID id,
 
   auto *caller_header = get_runtime()->get_current_proclet_header();
   auto *oa_sstream = get_runtime()->archive_pool()->get_oa_sstream();
-  // serialize(oa_sstream, std::forward<S1s>(states)...);
+#ifdef DDB_SUPPORT
   serialize_embeded(oa_sstream, std::forward<S1s>(states)...);
+#else
+  serialize(oa_sstream, std::forward<S1s>(states)...);
+#endif
   get_runtime()->detach();
   caller_guard.reset();
 
@@ -85,13 +88,16 @@ retry:
   auto *client = get_runtime()->rpc_client_mgr()->get_by_proclet_id(id);
 
   auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
-  auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
   auto local_proclet_id = to_proclet_id(caller_header);
+
+#ifdef DEBUG
+  auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
   std::cout << std::endl;
   std::cout << "Sending RPC (no return)..." << std::endl;
   std::cout << "\tFROM: \tProclet id: " << local_proclet_id << "; \tNode IP: " << local_ip << std::endl;
   std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
   std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+#endif
 
   rc = client->Call(args_span, &return_buf);
   if (unlikely(rc == kErrWrongClient)) {
@@ -119,8 +125,11 @@ RetT Proclet<T>::invoke_remote_with_ret(MigrationGuard &&caller_guard,
 
   auto *caller_header = get_runtime()->get_current_proclet_header();
   auto *oa_sstream = get_runtime()->archive_pool()->get_oa_sstream();
-  // serialize(oa_sstream, std::forward<S1s>(states)...);
+#ifdef DDB_SUPPORT
   serialize_embeded(oa_sstream, std::forward<S1s>(states)...);
+#else
+  serialize(oa_sstream, std::forward<S1s>(states)...);
+#endif
   get_runtime()->detach();
   caller_guard.reset();
 
