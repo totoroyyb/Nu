@@ -18,8 +18,8 @@ RPCServer::RPCServer()
 
 void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
   auto &rpc_type = from_span<RPCReqType>(args);
-  __attribute__((used)) auto remote_addr = returner->GetRemoteAddr();
-  __attribute__((used)) auto local_addr = returner->GetLocalAddr();
+  // __attribute__((used)) auto remote_addr = returner->GetRemoteAddr();
+  // __attribute__((used)) auto local_addr = returner->GetLocalAddr();
 
   switch (rpc_type) {
     // Migrator
@@ -84,12 +84,14 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
       __attribute__((used)) auto meta = from_span<RPCReqProcletCallDebugMeta>(args);
       uint64_t magic = meta.magic;
       assert(magic == tMetaMagic);
+#ifdef DEBUG
       std::stringstream ss;
       ss << "RIP: 0x" << std::hex << meta.rip << ", RSP: 0x" << std::hex << meta.rsp << std::endl;
-      ss << "Remote Addr: " << utils::IPUtils::uint32_to_str(remote_addr.ip) << ":" << std::dec << remote_addr.port << "; value: " << remote_addr.ip << std::endl;
-      ss << "Local Addr: " << utils::IPUtils::uint32_to_str(local_addr.ip) << ":" << std::dec << local_addr.port << "; value: " << local_addr.ip << std::endl;
+      ss << "Embeded caller communication ip: " << utils::IPUtils::uint32_to_str(meta.caller_comm_ip) << "; raw ip: " << std::dec << meta.caller_comm_ip << std::endl;
+      ss << "Local communication ip: " << utils::IPUtils::uint32_to_str(ddb_meta.comm_ip) << "; raw ip: " << std::dec << ddb_meta.comm_ip << std::endl;
       ss << "Parent PID: " << meta.pid << std::endl;
       DEBUG_P(ss.str());
+#endif
       args = args.subspan(sizeof(RPCReqProcletCallDebugMeta));
       get_runtime()->proclet_server()->parse_and_run_handler(args, returner);
       break;

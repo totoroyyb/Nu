@@ -1,11 +1,5 @@
 #include <openssl/crypto.h>
 #include <sys/mman.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-
-#include <ifaddrs.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -38,7 +32,7 @@ extern "C" {
 
 namespace nu {
 
-static uint32_t ifa_ip_addr = 0x0;
+DDBMetadata ddb_meta = {0, 0};
 
 Runtime::Runtime() {}
 
@@ -188,45 +182,8 @@ int runtime_main_init(int argc, char **argv,
   std::cout << "ifa_name: " << ifa_name << std::endl;
 #endif // DEBUG
 
-  struct ifaddrs *ifaddr, *ifa;
-  int family, s;
-  char host[NI_MAXHOST];
+  populate_ddb_metadata(ifa_name);
 
-  if (getifaddrs(&ifaddr) == -1) {
-    perror("getifaddrs");
-    goto init_runtime;
-  }
-
-  for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
-    if (ifa->ifa_addr == nullptr) {
-      continue;
-    }
-
-    family = ifa->ifa_addr->sa_family;
-
-    if (strcmp(ifa->ifa_name, ifa_name.c_str()) == 0 && family == AF_INET) {  // AF_INET for IPv4
-      struct sockaddr_in *ipv4 = (struct sockaddr_in *)ifa->ifa_addr;
-      uint32_t ip_addr = ipv4->sin_addr.s_addr;
-      ifa_ip_addr = ip_addr;
-
-      inet_ntop(AF_INET, &(ipv4->sin_addr), host, NI_MAXHOST);
-
-#ifdef DEBUG 
-      std::cout << "----" << std::endl;
-      std::cout << "Interface " << ifa->ifa_name << "; host: " << host << "; raw ip: " << ifa_ip_addr << std::endl;
-      std::cout << "----" << std::endl;
-#endif // DEBUG
-      break;
-    }
-  }
-
-  freeifaddrs(ifaddr);
-  if (ifa_ip_addr == 0) {
-    std::cout << "ifa ip address is not initialized." << std::endl;
-    goto init_runtime;
-  }
-
-init_runtime:
   auto ret = rt::RuntimeInit(conf_path, [&] {
     if (conf_path.starts_with(".conf_")) {
       BUG_ON(remove(conf_path.c_str()));

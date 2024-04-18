@@ -28,7 +28,7 @@ namespace utils {
 
     class IPUtils {
     public:
-        static inline std::string uint32_to_str(int32_t ip) {
+        static inline std::string uint32_to_str(uint32_t ip) {
             std::string result;
             for (int i = 0; i < 4; ++i) {
                 result.insert(0, std::to_string(ip & 0xFF));

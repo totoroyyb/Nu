@@ -51,6 +51,7 @@ inline void serialize_embeded(auto *oa_sstream, S1s &&... states) {
   fetch_register(&rip, &rsp);
   auto meta = RPCReqProcletCallDebugMeta{
     tMetaMagic,
+    ddb_meta.comm_ip,
     rip,
     rsp,
     getpid()
