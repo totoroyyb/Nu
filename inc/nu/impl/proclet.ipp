@@ -5,6 +5,7 @@
 #include <sstream>
 #include <type_traits>
 #include <utility>
+#include <unistd.h>
 
 extern "C" {
 #include <base/assert.h>
@@ -19,6 +20,7 @@ extern "C" {
 #include "nu/rpc_server.hpp"
 #include "nu/runtime.hpp"
 #include "nu/utils/future.hpp"
+#include "nu/utils/utils.hpp"
 
 namespace nu {
 
@@ -36,6 +38,27 @@ inline void serialize(auto *oa_sstream, S1s &&... states) {
   ((oa << std::forward<S1s>(states)), ...);
 }
 
+inline void fetch_register(uintptr_t *rip, uintptr_t *rsp) {
+    void* rspTemp;
+    asm volatile ("mov %%rsp, %0" : "=r" (rspTemp));
+    *rsp = reinterpret_cast<uintptr_t>(rspTemp);
+    *rip = reinterpret_cast<uintptr_t>(__builtin_return_address(0)); // Approximation to get RIP
+}
+
+template <typename... S1s>
+inline void serialize_embeded(auto *oa_sstream, S1s &&... states) {
+  uintptr_t rip, rsp;
+  fetch_register(&rip, &rsp);
+  auto meta = RPCReqProcletCallDebugMeta{
+    tMetaMagic,
+    ddb_meta.comm_ip,
+    rip,
+    rsp,
+    getpid()
+  };
+  serialize(oa_sstream, meta, std::forward<S1s>(states)...);
+}
+
 template <typename T>
 template <typename... S1s>
 void Proclet<T>::invoke_remote(MigrationGuard &&caller_guard, ProcletID id,
@@ -45,7 +68,11 @@ void Proclet<T>::invoke_remote(MigrationGuard &&caller_guard, ProcletID id,
 
   auto *caller_header = get_runtime()->get_current_proclet_header();
   auto *oa_sstream = get_runtime()->archive_pool()->get_oa_sstream();
+#ifdef DDB_SUPPORT
+  serialize_embeded(oa_sstream, std::forward<S1s>(states)...);
+#else
   serialize(oa_sstream, std::forward<S1s>(states)...);
+#endif
   get_runtime()->detach();
   caller_guard.reset();
 
@@ -59,6 +86,18 @@ retry:
   auto args_span = std::span(states_data, states_size);
 
   auto *client = get_runtime()->rpc_client_mgr()->get_by_proclet_id(id);
+
+#ifdef DEBUG
+  auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
+  auto local_proclet_id = to_proclet_id(caller_header);
+  auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
+  std::cout << std::endl;
+  std::cout << "Sending RPC (no return)..." << std::endl;
+  std::cout << "\tFROM: \tProclet id: " << local_proclet_id << "; \tNode IP: " << local_ip << std::endl;
+  std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
+  std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+#endif
+
   rc = client->Call(args_span, &return_buf);
   if (unlikely(rc == kErrWrongClient)) {
     get_runtime()->rpc_client_mgr()->invalidate_cache(id, client);
@@ -85,7 +124,11 @@ RetT Proclet<T>::invoke_remote_with_ret(MigrationGuard &&caller_guard,
 
   auto *caller_header = get_runtime()->get_current_proclet_header();
   auto *oa_sstream = get_runtime()->archive_pool()->get_oa_sstream();
+#ifdef DDB_SUPPORT
+  serialize_embeded(oa_sstream, std::forward<S1s>(states)...);
+#else
   serialize(oa_sstream, std::forward<S1s>(states)...);
+#endif
   get_runtime()->detach();
   caller_guard.reset();
 
@@ -99,6 +142,18 @@ retry:
   auto args_span = std::span(states_data, states_size);
 
   auto *client = get_runtime()->rpc_client_mgr()->get_by_proclet_id(id);
+
+  #ifdef DEBUG
+  auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
+  auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
+  auto local_proclet_id = to_proclet_id(caller_header);
+  std::cout << "Sending RPC (with return)..." << std::endl;
+  std::cout << "\tFROM: \tProclet id: " << local_proclet_id << "; \tNode IP: " << local_ip << std::endl;
+  std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
+  // std::cout << "Sending RPC (with return)... Orginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+  std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+  #endif
+
   rc = client->Call(args_span, &return_buf);
   if (unlikely(rc == kErrWrongClient)) {
     get_runtime()->rpc_client_mgr()->invalidate_cache(id, client);
@@ -217,6 +272,13 @@ Proclet<T> Proclet<T>::__create(bool pinned, uint64_t capacity, NodeIP ip_hint,
     }
   }
 
+  #ifdef DEBUG
+  std::cout << "Created Proclet: " << std::endl;
+  std::cout << "\tid: " << callee_id << std::endl;
+  std::cout << "\tip: " << utils::IPUtils::uint32_to_str(server_ip) << std::endl;
+  std::cout << "\tlocal caladan ip: " << utils::IPUtils::uint32_to_str(get_cfg_ip()) << std::endl;
+  #endif
+
   if (server_ip == get_cfg_ip()) {
     // Fast path: the proclet is actually local, use normal function call.
     ProcletServer::construct_proclet_locally<T, As...>(
@@ -311,6 +373,13 @@ RetT Proclet<T>::__run(RetT (*fn)(T &, S0s...), S1s &&... states) {
             StatesTuple(pass_across_proclet(std::forward<S1s>(states))...);
 
         if constexpr (kHasRetVal) {
+          #ifdef DEBUG
+          std::stringstream ss;
+          ss << "starts run_closure_locally_with_return..." << std::endl;
+          ss << nu::utils::function_traits<decltype(fn)>::get_signature() << std::endl;
+          DEBUG_P(ss.str());
+          #endif
+
           ProcletServer::run_closure_locally<MigrEn, CPUMon, CPUSamp, T, RetT,
                                              decltype(fn),
                                              std::decay_t<S1s>...>(
@@ -318,6 +387,13 @@ RetT Proclet<T>::__run(RetT (*fn)(T &, S0s...), S1s &&... states) {
               slab_guard, &ret, caller_header, callee_header, fn,
               copied_states);
         } else {
+          #ifdef DEBUG
+          std::stringstream ss;
+          ss << "starts run_closure_locally_no_rerturn..." << std::endl;
+          ss << nu::utils::function_traits<decltype(fn)>::get_signature() << std::endl;
+          DEBUG_P(ss.str());
+          #endif
+
           ProcletServer::run_closure_locally<MigrEn, CPUMon, CPUSamp, T, RetT,
                                              decltype(fn),
                                              std::decay_t<S1s>...>(
@@ -531,6 +607,11 @@ template <typename T, typename... As>
 inline Proclet<T> make_proclet(std::tuple<As...> args_tuple, bool pinned,
                                std::optional<uint64_t> capacity,
                                std::optional<NodeIP> ip_hint) {
+  std::cout << "make_proclet_with_args()..." << std::endl;
+  std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
+  if (ip_hint.has_value()) {
+    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
+  }
   return std::apply(
       [&](auto &&...args) {
         return Proclet<T>::__create(
@@ -545,6 +626,11 @@ inline Future<Proclet<T>> make_proclet_async(std::tuple<As...> args_tuple,
                                              bool pinned,
                                              std::optional<uint64_t> capacity,
                                              std::optional<NodeIP> ip_hint) {
+  std::cout << "make_proclet_async_with_args()..." << std::endl;
+  std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
+  if (ip_hint.has_value()) {
+    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
+  }
   return nu::async(
       [=] { return make_proclet<T>(args_tuple, pinned, capacity, ip_hint); });
 }
@@ -552,6 +638,14 @@ inline Future<Proclet<T>> make_proclet_async(std::tuple<As...> args_tuple,
 template <typename T>
 inline Proclet<T> make_proclet(bool pinned, std::optional<uint64_t> capacity,
                                std::optional<NodeIP> ip_hint) {
+  #ifdef DEBUG
+  std::cout << "make_proclet_no_args()..." << std::endl;
+  std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
+  if (ip_hint.has_value()) {
+    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
+  }
+  #endif
+
   return Proclet<T>::__create(
       pinned, capacity.value_or(kDefaultProcletHeapSize), ip_hint.value_or(0));
 }
@@ -560,6 +654,12 @@ template <typename T>
 inline Future<Proclet<T>> make_proclet_async(bool pinned,
                                              std::optional<uint64_t> capacity,
                                              std::optional<NodeIP> ip_hint) {
+  std::cout << "make_proclet_async_no_args()..." << std::endl;
+  std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
+  if (ip_hint.has_value()) {
+    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
+  }
+
   return nu::async([=] { return make_proclet<T>(pinned, capacity, ip_hint); });
 }
 

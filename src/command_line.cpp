@@ -60,7 +60,8 @@ NuOptionsDesc::NuOptionsDesc(bool help) : OptionsDesc("Nu arguments", help) {
     ("lpid,l", boost::program_options::value(&lpid)->required(), "logical process id (receive a free id if passing 0)")
     ("nomemps", "don't react to memory pressure")
     ("nocpups", "don't react to CPU pressure")
-    ("isol", "as an isolated node");
+    ("isol", "as an isolated node")
+    ("ifaname", boost::program_options::value(&ifa_name)->default_value("enp1s0f0"), "interface name to capture at runtime initialization");
 }
 
 CaladanOptionsDesc::CaladanOptionsDesc(int default_guaranteed,

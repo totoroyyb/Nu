@@ -1,3 +1,5 @@
+#include <openssl/crypto.h>
+#include <sys/mman.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -5,9 +7,6 @@
 #include <fstream>
 #include <new>
 #include <string>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <openssl/crypto.h>
 
 extern "C" {
 #include <base/assert.h>
@@ -32,6 +31,8 @@ extern "C" {
 #include "nu/utils/slab.hpp"
 
 namespace nu {
+
+DDBMetadata ddb_meta = {0, 0};
 
 Runtime::Runtime() {}
 
@@ -167,12 +168,23 @@ int runtime_main_init(int argc, char **argv,
                                                 : nu::Runtime::Mode::kServer;
   auto ctrl_ip = str_to_ip(all_options_desc.nu.ctrl_ip_str);
   auto lpid = all_options_desc.nu.lpid;
+  auto ifa_name = all_options_desc.nu.ifa_name;
   auto conf_path = all_options_desc.caladan.conf_path;
   auto isol = all_options_desc.vm.count("isol");
   if (conf_path.empty()) {
     conf_path = ".conf_" + std::to_string(getpid());
     write_options_to_file(conf_path, all_options_desc);
   }
+
+#ifdef DEBUG
+  std::cout << "ctrl_ip: " << all_options_desc.nu.ctrl_ip_str << std::endl;
+  std::cout << "isol: " << isol << std::endl;
+  std::cout << "ifa_name: " << ifa_name << std::endl;
+#endif // DEBUG
+
+#ifdef DDB_SUPPORT
+  populate_ddb_metadata(ifa_name);
+#endif
 
   auto ret = rt::RuntimeInit(conf_path, [&] {
     if (conf_path.starts_with(".conf_")) {

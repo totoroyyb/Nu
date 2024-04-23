@@ -12,6 +12,18 @@ namespace nu {
 #error Must indicate number of CPU cores
 #endif
 
+/// @brief  Added magic number for testing RPCRewqProcletCallDebugMeta
+constexpr static uint64_t tMetaMagic = 12345;
+
+/// @brief  Added data structure for backtrace
+struct RPCReqProcletCallDebugMeta {
+  uint64_t magic;
+  uint32_t caller_comm_ip;
+  uintptr_t rip;
+  uintptr_t rsp;
+  pid_t pid;
+} __attribute__((packed));
+
 using ProcletID = uint64_t;
 using lpid_t = uint16_t;
 using SlabId_t = uint32_t;
@@ -28,6 +40,12 @@ struct Resource {
     cores += o.cores;
     mem_mbs += o.mem_mbs;
     return *this;
+  }
+
+  std::string to_string() const {
+    return "cores: " + std::to_string(cores) +
+           ", mem_mbs: " + std::to_string(mem_mbs);
+
   }
 };
 

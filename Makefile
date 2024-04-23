@@ -11,6 +11,13 @@ override CXXFLAGS += -DNCORES=$(NCORES) -ftemplate-backtrace-limit=0
 override LDFLAGS += -lcrypto -lpthread -lboost_program_options -lnuma -Wno-stringop-overread \
                     -Wno-alloc-size-larger-than -ldl
 
+# load Nu configuration parameters
+include ./build/config
+
+ifeq ($(CONFIG_DDB),y)
+override CXXFLAGS += -DDDB_SUPPORT
+endif
+
 librt_libs = $(CALADAN_PATH)/bindings/cc/librt++.a
 
 lib_src = $(wildcard src/*.cpp) $(wildcard src/utils/*.cpp)

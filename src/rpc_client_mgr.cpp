@@ -1,5 +1,6 @@
 #include "nu/rpc_client_mgr.hpp"
 #include "nu/ctrl_client.hpp"
+#include "nu/utils/utils.hpp"
 
 namespace nu {
 
@@ -80,6 +81,11 @@ NodeIP RPCClientMgr::get_ip_by_proclet_id(ProcletID proclet_id) {
     return Caladan::get_ip();
   }
   return get_info(proclet_id).ip;
+}
+
+std::string RPCClientMgr::get_ip_str_by_proclet_id(ProcletID proclet_id) {
+  auto ip_int = get_ip_by_proclet_id(proclet_id);
+  return nu::utils::IPUtils::uint32_to_str(ip_int);
 }
 
 void RPCClientMgr::invalidate_cache(ProcletID proclet_id, RPCClient *old_client) {

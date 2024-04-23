@@ -1,11 +1,13 @@
 #include "nu/rpc_server.hpp"
 
 #include "nu/commons.hpp"
-#include "nu/runtime.hpp"
 #include "nu/ctrl_server.hpp"
 #include "nu/migrator.hpp"
 #include "nu/proclet_server.hpp"
+#include "nu/runtime.hpp"
 #include "nu/utils/rpc.hpp"
+#include "nu/utils/utils.hpp"
+#include <iostream> 
 
 namespace nu {
 
@@ -77,6 +79,20 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
     // Proclet server
     case kProcletCall: {
       args = args.subspan(sizeof(RPCReqType));
+#ifdef DDB_SUPPORT
+      __attribute__((used)) auto meta = from_span<RPCReqProcletCallDebugMeta>(args);
+      uint64_t magic = meta.magic;
+      assert(magic == tMetaMagic);
+#ifdef DEBUG
+      std::stringstream ss;
+      ss << "RIP: 0x" << std::hex << meta.rip << ", RSP: 0x" << std::hex << meta.rsp << std::endl;
+      ss << "Embeded caller communication ip: " << utils::IPUtils::uint32_to_str(meta.caller_comm_ip) << "; raw ip: " << std::dec << meta.caller_comm_ip << std::endl;
+      ss << "Local communication ip: " << utils::IPUtils::uint32_to_str(ddb_meta.comm_ip) << "; raw ip: " << std::dec << ddb_meta.comm_ip << std::endl;
+      ss << "Parent PID: " << meta.pid << std::endl;
+      DEBUG_P(ss.str());
+#endif
+      args = args.subspan(sizeof(RPCReqProcletCallDebugMeta));
+#endif
       get_runtime()->proclet_server()->parse_and_run_handler(args, returner);
       break;
     }

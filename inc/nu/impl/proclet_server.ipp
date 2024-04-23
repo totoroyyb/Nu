@@ -13,6 +13,8 @@
 #include "nu/proclet_mgr.hpp"
 #include "nu/type_traits.hpp"
 
+#include "nu/utils/utils.hpp"
+
 namespace nu {
 
 template <typename Cls, typename... As>
@@ -31,6 +33,11 @@ void ProcletServer::__construct_proclet(MigrationGuard *callee_guard, Cls *obj,
     new (args) ArgsTuple();
     std::apply([&](auto &&... args) { ((ia_sstream->ia >> args), ...); },
                *args);
+
+    std::stringstream ss;
+    ss << "__construct_proclet: " << std::endl;
+    ss << "\tclass: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
+    DEBUG_P(ss.str());
 
     callee_guard->enable_for([&] {
       std::apply(
@@ -103,6 +110,13 @@ void ProcletServer::construct_proclet_locally(MigrationGuard &&caller_guard,
       get_runtime()->proclet_manager()->insert(base);
     }
     caller_guard.reset();
+
+    #ifdef DEBUG
+    std::stringstream ss;
+    ss << "local __construct_proclet: " << std::endl;
+    ss << "\tclass: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
+    DEBUG_P(ss.str());
+    #endif
 
     callee_guard.enable_for([&] {
       std::apply(
@@ -258,6 +272,14 @@ void ProcletServer::__run_closure(MigrationGuard *callee_guard, Cls *obj,
   std::tuple<std::decay_t<S1s>...> states;
   std::apply([&](auto &&... states) { ((ia_sstream->ia >> states), ...); },
              states);
+  
+  #ifdef DEBUG
+  std::stringstream ss;
+  ss << "run closure on remote machine..." << std::endl;
+  ss << nu::utils::function_traits<FnPtr>::get_signature() << std::endl;
+  DEBUG_P(ss.str());
+  #endif
+
   auto apply_fn = [&] {
     std::apply(
         [&](auto &&... states) {
