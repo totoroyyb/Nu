@@ -131,17 +131,21 @@ Runtime::__run_within_proclet_env(void *proclet_base, void (*fn)(A0s...),
   }
   auto &migration_guard = *optional_migration_guard;
 
+#ifdef DEBUG
   DEBUG_P_STARTS();
   nu::utils::function_traits<decltype(fn)>::print_signature();
   DEBUG_P_ENDS();
+#endif
 
   auto proclet_id = to_proclet_id(proclet_header);
+  #ifdef DEBUG
   auto ip_addr = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
   std::stringstream output;
   output << "Run Proclet " << proclet_id << " on " << ip_addr << std::endl;
   output << "Run Proclet... Original thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
   std::string outputString = output.str();
   DEBUG_P(outputString);
+  #endif
 
   auto *obj_ptr = get_current_root_obj<Cls>();
   fn(&migration_guard, obj_ptr, std::forward<A1s>(args)...);

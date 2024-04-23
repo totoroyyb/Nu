@@ -87,10 +87,9 @@ retry:
 
   auto *client = get_runtime()->rpc_client_mgr()->get_by_proclet_id(id);
 
+#ifdef DEBUG
   auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
   auto local_proclet_id = to_proclet_id(caller_header);
-
-#ifdef DEBUG
   auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
   std::cout << std::endl;
   std::cout << "Sending RPC (no return)..." << std::endl;
@@ -144,6 +143,7 @@ retry:
 
   auto *client = get_runtime()->rpc_client_mgr()->get_by_proclet_id(id);
 
+  #ifdef DEBUG
   auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
   auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
   auto local_proclet_id = to_proclet_id(caller_header);
@@ -152,6 +152,7 @@ retry:
   std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
   // std::cout << "Sending RPC (with return)... Orginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
   std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+  #endif
 
   rc = client->Call(args_span, &return_buf);
   if (unlikely(rc == kErrWrongClient)) {
@@ -271,10 +272,12 @@ Proclet<T> Proclet<T>::__create(bool pinned, uint64_t capacity, NodeIP ip_hint,
     }
   }
 
+  #ifdef DEBUG
   std::cout << "Created Proclet: " << std::endl;
   std::cout << "\tid: " << callee_id << std::endl;
   std::cout << "\tip: " << utils::IPUtils::uint32_to_str(server_ip) << std::endl;
   std::cout << "\tlocal caladan ip: " << utils::IPUtils::uint32_to_str(get_cfg_ip()) << std::endl;
+  #endif
 
   if (server_ip == get_cfg_ip()) {
     // Fast path: the proclet is actually local, use normal function call.
@@ -370,10 +373,12 @@ RetT Proclet<T>::__run(RetT (*fn)(T &, S0s...), S1s &&... states) {
             StatesTuple(pass_across_proclet(std::forward<S1s>(states))...);
 
         if constexpr (kHasRetVal) {
+          #ifdef DEBUG
           std::stringstream ss;
           ss << "starts run_closure_locally_with_return..." << std::endl;
           ss << nu::utils::function_traits<decltype(fn)>::get_signature() << std::endl;
           DEBUG_P(ss.str());
+          #endif
 
           ProcletServer::run_closure_locally<MigrEn, CPUMon, CPUSamp, T, RetT,
                                              decltype(fn),
@@ -382,10 +387,12 @@ RetT Proclet<T>::__run(RetT (*fn)(T &, S0s...), S1s &&... states) {
               slab_guard, &ret, caller_header, callee_header, fn,
               copied_states);
         } else {
+          #ifdef DEBUG
           std::stringstream ss;
           ss << "starts run_closure_locally_no_rerturn..." << std::endl;
           ss << nu::utils::function_traits<decltype(fn)>::get_signature() << std::endl;
           DEBUG_P(ss.str());
+          #endif
 
           ProcletServer::run_closure_locally<MigrEn, CPUMon, CPUSamp, T, RetT,
                                              decltype(fn),
@@ -631,11 +638,13 @@ inline Future<Proclet<T>> make_proclet_async(std::tuple<As...> args_tuple,
 template <typename T>
 inline Proclet<T> make_proclet(bool pinned, std::optional<uint64_t> capacity,
                                std::optional<NodeIP> ip_hint) {
+  #ifdef DEBUG
   std::cout << "make_proclet_no_args()..." << std::endl;
   std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
   if (ip_hint.has_value()) {
     std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
   }
+  #endif
 
   return Proclet<T>::__create(
       pinned, capacity.value_or(kDefaultProcletHeapSize), ip_hint.value_or(0));
