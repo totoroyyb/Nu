@@ -30,6 +30,12 @@ extern "C" {
 #include "nu/runtime.hpp"
 #include "nu/utils/slab.hpp"
 
+
+#ifdef DDB_SUPPORT
+// Use service_reporter header for service discovery
+#include "nu/utils/service_reporter.h"
+#endif
+
 namespace nu {
 
 DDBMetadata ddb_meta = {0, 0};
@@ -184,6 +190,19 @@ int runtime_main_init(int argc, char **argv,
 
 #ifdef DDB_SUPPORT
   populate_ddb_metadata(ifa_name);
+
+  if (service_reporter_init() != 0) {
+    std::cerr << "failed to initialize service reporter" << std::endl;
+  } else {
+    auto service = ServiceInfo {
+      .ip = ddb_meta.comm_ip,
+      .tag = (char*)"nu_proc",
+      .pid = getpid()
+    };
+    if (report_service(&service) != 0) {
+      std::cerr << "failed to report new service" << std::endl;
+    }
+  }
 #endif
 
   auto ret = rt::RuntimeInit(conf_path, [&] {
@@ -217,6 +236,12 @@ int runtime_main_init(int argc, char **argv,
     std::cerr << "failed to start runtime" << std::endl;
     return ret;
   }
+
+#ifdef DDB_SUPPORT
+  int ret_val = service_reporter_deinit();
+  if (ret_val)
+    std::cerr << "failed to deinit service reporter" << std::endl;
+#endif
 
   return 0;
 }

@@ -9,6 +9,7 @@ INC += -Iinc -I$(CALADAN_PATH)/bindings/cc -I$(CALADAN_PATH)/ksched -I/usr/inclu
 
 override CXXFLAGS += -DNCORES=$(NCORES) -ftemplate-backtrace-limit=0
 override LDFLAGS += -lcrypto -lpthread -lboost_program_options -lnuma -Wno-stringop-overread \
+					-lpaho-mqtt3c \
                     -Wno-alloc-size-larger-than -ldl
 
 # load Nu configuration parameters
