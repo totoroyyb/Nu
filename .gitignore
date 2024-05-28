@@ -3,6 +3,8 @@
 *.a
 *.bak
 glibc
-bin/*
+bin/test_*
+bin/bench_*
+bin/ctrl_*
 *~
 .conf_*
