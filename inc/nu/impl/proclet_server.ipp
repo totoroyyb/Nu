@@ -34,10 +34,10 @@ void ProcletServer::__construct_proclet(MigrationGuard *callee_guard, Cls *obj,
     std::apply([&](auto &&... args) { ((ia_sstream->ia >> args), ...); },
                *args);
 
-    std::stringstream ss;
-    ss << "__construct_proclet: " << std::endl;
-    ss << "\tclass: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
-    DEBUG_P(ss.str());
+#ifdef DEBUG
+    std::cout << "__construct_proclet: " << std::endl;
+    std::cout << "\tclass: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
+#endif
 
     callee_guard->enable_for([&] {
       std::apply(
@@ -111,12 +111,10 @@ void ProcletServer::construct_proclet_locally(MigrationGuard &&caller_guard,
     }
     caller_guard.reset();
 
-    #ifdef DEBUG
-    std::stringstream ss;
-    ss << "local __construct_proclet: " << std::endl;
-    ss << "\tclass: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
-    DEBUG_P(ss.str());
-    #endif
+#ifdef DEBUG
+    std::cout << "local __construct_proclet: " << std::endl;
+    std::cout << "\tclass: " <<  nu::utils::TypeUtils::demangled_name<Cls>() << std::endl;
+#endif
 
     callee_guard.enable_for([&] {
       std::apply(
@@ -273,12 +271,10 @@ void ProcletServer::__run_closure(MigrationGuard *callee_guard, Cls *obj,
   std::apply([&](auto &&... states) { ((ia_sstream->ia >> states), ...); },
              states);
   
-  #ifdef DEBUG
-  std::stringstream ss;
-  ss << "run closure on remote machine..." << std::endl;
-  ss << nu::utils::function_traits<FnPtr>::get_signature() << std::endl;
-  DEBUG_P(ss.str());
-  #endif
+#ifdef DEBUG
+  std::cout << "run closure on remote machine..." << std::endl;
+  std::cout << nu::utils::function_traits<FnPtr>::get_signature() << std::endl;
+#endif
 
   auto apply_fn = [&] {
     std::apply(

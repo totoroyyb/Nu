@@ -196,7 +196,10 @@ class MigrationGuard {
 int runtime_main_init(int argc, char **argv,
                       std::function<void(int argc, char **argv)> main_func);
 Runtime *get_runtime();
+
+#ifdef DDB_SUPPORT
 void populate_ddb_metadata(const std::string& ifa_name);
+#endif
 
 }  // namespace nu
 

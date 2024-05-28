@@ -85,12 +85,12 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
       log_info("magic: %llu, tMetaMagic: %llu", magic, tMetaMagic);
       assert(magic == tMetaMagic);
 #ifdef DEBUG
-      std::stringstream ss;
-      ss << "RIP: 0x" << std::hex << meta.rip << ", RSP: 0x" << std::hex << meta.rsp << std::endl;
-      ss << "Embeded caller communication ip: " << utils::IPUtils::uint32_to_str(meta.caller_comm_ip) << "; raw ip: " << std::dec << meta.caller_comm_ip << std::endl;
-      ss << "Local communication ip: " << utils::IPUtils::uint32_to_str(ddb_meta.comm_ip) << "; raw ip: " << std::dec << ddb_meta.comm_ip << std::endl;
-      ss << "Parent PID: " << meta.pid << std::endl;
-      DEBUG_P(ss.str());
+      DEBUG_P_STARTS();
+      std::cout << "RIP: 0x" << std::hex << meta.rip << ", RSP: 0x" << std::hex << meta.rsp << std::endl;
+      std::cout << "Embeded caller communication ip: " << utils::IPUtils::uint32_to_str(meta.caller_comm_ip) << "; raw ip: " << std::dec << meta.caller_comm_ip << std::endl;
+      std::cout << "Local communication ip: " << utils::IPUtils::uint32_to_str(ddb_meta.comm_ip) << "; raw ip: " << std::dec << ddb_meta.comm_ip << std::endl;
+      std::cout << "Parent PID: " << meta.pid << std::endl;
+      DEBUG_P_ENDS();
 #endif
       args = args.subspan(sizeof(RPCReqProcletCallDebugMeta));
 #endif

@@ -375,13 +375,6 @@ RetT Proclet<T>::__run(RetT (*fn)(T &, S0s...), S1s &&... states) {
             StatesTuple(pass_across_proclet(std::forward<S1s>(states))...);
 
         if constexpr (kHasRetVal) {
-          #ifdef DEBUG
-          std::stringstream ss;
-          ss << "starts run_closure_locally_with_return..." << std::endl;
-          ss << nu::utils::function_traits<decltype(fn)>::get_signature() << std::endl;
-          DEBUG_P(ss.str());
-          #endif
-
           ProcletServer::run_closure_locally<MigrEn, CPUMon, CPUSamp, T, RetT,
                                              decltype(fn),
                                              std::decay_t<S1s>...>(
@@ -389,13 +382,6 @@ RetT Proclet<T>::__run(RetT (*fn)(T &, S0s...), S1s &&... states) {
               slab_guard, &ret, caller_header, callee_header, fn,
               copied_states);
         } else {
-          #ifdef DEBUG
-          std::stringstream ss;
-          ss << "starts run_closure_locally_no_rerturn..." << std::endl;
-          ss << nu::utils::function_traits<decltype(fn)>::get_signature() << std::endl;
-          DEBUG_P(ss.str());
-          #endif
-
           ProcletServer::run_closure_locally<MigrEn, CPUMon, CPUSamp, T, RetT,
                                              decltype(fn),
                                              std::decay_t<S1s>...>(

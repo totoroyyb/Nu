@@ -138,14 +138,14 @@ Runtime::__run_within_proclet_env(void *proclet_base, void (*fn)(A0s...),
 #endif
 
   auto proclet_id = to_proclet_id(proclet_header);
-  #ifdef DEBUG
+
+#ifdef DEBUG
+  DEBUG_P_STARTS();
   auto ip_addr = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
-  std::stringstream output;
-  output << "Run Proclet " << proclet_id << " on " << ip_addr << std::endl;
-  output << "Run Proclet... Original thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
-  std::string outputString = output.str();
-  DEBUG_P(outputString);
-  #endif
+  std::cout << "Run Proclet " << proclet_id << " on " << ip_addr << std::endl;
+  std::cout << "Run Proclet... Original thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+  DEBUG_P_ENDS();
+#endif
 
   auto *obj_ptr = get_current_root_obj<Cls>();
   fn(&migration_guard, obj_ptr, std::forward<A1s>(args)...);
@@ -358,6 +358,7 @@ inline Runtime *get_runtime() {
   return runtime;
 }
 
+#ifdef DDB_SUPPORT
 inline void populate_ddb_metadata(const std::string& ifa_name) {
   struct ifaddrs *ifaddr, *ifa;
   int family;
@@ -395,5 +396,6 @@ free_ifaddrs:
     std::cout << "ifa ip address is not initialized." << std::endl;
   }
 }
+#endif
 
 }  // namespace nu

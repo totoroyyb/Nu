@@ -125,6 +125,7 @@ std::optional<std::pair<lpid_t, VAddrRange>> Controller::register_node(
   auto [iter, success] = node_statuses.try_emplace(ip, isol);
   BUG_ON(!success);
 
+#ifdef DEBUG
   std::cout << "------" << std::endl;
   std::cout << "Existing nodes (lpid = " << lpid << "):" << std::endl;
   for (const auto &[node_ip, status] : node_statuses) {
@@ -132,6 +133,7 @@ std::optional<std::pair<lpid_t, VAddrRange>> Controller::register_node(
     std::cout << "IP Addr: " << ip_addr << ", \nStatus: " << status.to_string() << std::endl;
   }
   std::cout << "------" << std::endl;
+#endif
 
   return std::make_pair(lpid, stack_cluster);
 }
