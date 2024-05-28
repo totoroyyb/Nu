@@ -82,6 +82,7 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
 #ifdef DDB_SUPPORT
       __attribute__((used)) auto meta = from_span<RPCReqProcletCallDebugMeta>(args);
       uint64_t magic = meta.magic;
+      log_info("magic: %llu, tMetaMagic: %llu", magic, tMetaMagic);
       assert(magic == tMetaMagic);
 #ifdef DEBUG
       std::stringstream ss;

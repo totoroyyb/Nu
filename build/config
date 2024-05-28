@@ -1,4 +1,4 @@
 # build configuration options (set to y for "yes", n for "no")
 
 # Enable DDB Support for metadata Embedding
-CONFIG_DDB=y
+CONFIG_DDB=n

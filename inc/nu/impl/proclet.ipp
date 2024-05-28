@@ -38,6 +38,7 @@ inline void serialize(auto *oa_sstream, S1s &&... states) {
   ((oa << std::forward<S1s>(states)), ...);
 }
 
+#ifdef DDB_SUPPORT
 inline void fetch_register(uintptr_t *rip, uintptr_t *rsp) {
     void* rspTemp;
     asm volatile ("mov %%rsp, %0" : "=r" (rspTemp));
@@ -58,6 +59,7 @@ inline void serialize_embeded(auto *oa_sstream, S1s &&... states) {
   };
   serialize(oa_sstream, meta, std::forward<S1s>(states)...);
 }
+#endif
 
 template <typename T>
 template <typename... S1s>
