@@ -195,7 +195,7 @@ int runtime_main_init(int argc, char **argv,
 #endif // DEBUG
 
 #ifdef DDB_SUPPORT
-  populate_ddb_metadata(ifa_name);
+  populate_ddb_metadata(ifa_name.c_str());
 
   if (service_reporter_init() != 0) {
     std::cerr << "failed to initialize service reporter" << std::endl;

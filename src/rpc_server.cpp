@@ -96,7 +96,7 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
 //       std::cout << "Parent PID: " << meta.pid << std::endl;
 //       DEBUG_P_ENDS();
 // #endif
-      args = args.subspan(sizeof(RPCReqProcletCallDebugMeta));
+      args = args.subspan(sizeof(DDBTraceMeta));
 #endif
       get_runtime()->proclet_server()->parse_and_run_handler(args, returner);
       break;
