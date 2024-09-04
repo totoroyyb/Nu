@@ -4,6 +4,8 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+// #include <thread>  // For std::this_thread::sleep_for
+// #include <chrono>  // For std::chrono::seconds
 
 extern "C" {
 #include <net/ip.h>
@@ -15,6 +17,7 @@ extern "C" {
 
 using namespace nu;
 
+namespace UserCode {
 class Obj {
  public:
   void set_vec_a(std::vector<int> vec) { a_ = vec; }
@@ -33,6 +36,7 @@ class Obj {
 };
 
 void do_work() {
+  // std::this_thread::sleep_for(std::chrono::seconds(2));
   bool passed = true;
 
   std::vector<int> a{1, 2, 3, 4};
@@ -42,6 +46,7 @@ void do_work() {
   auto proclet_future = make_proclet_async<Obj>();
   auto proclet = std::move(proclet_future.get());
 
+  // std::this_thread::sleep_for(std::chrono::seconds(2));
   // We can get a weak reference to the proclet (like C++'s WeakPtr).
   auto weak_proclet = proclet.get_weak();
 
@@ -49,6 +54,7 @@ void do_work() {
   auto future_1 = weak_proclet.run_async(&Obj::set_vec_b, b);
   future_0.get();
   future_1.get();
+  // std::this_thread::sleep_for(std::chrono::seconds(2));
 
   auto tmp_proclet = make_proclet<ErasedType>();
   bool match;
@@ -66,14 +72,20 @@ void do_work() {
       },
       std::move(proclet), a, b);
   passed &= match;
+  // std::this_thread::sleep_for(std::chrono::seconds(2));
 
   if (passed) {
     std::cout << "Passed" << std::endl;
   } else {
     std::cout << "Failed" << std::endl;
   }
+  // std::this_thread::sleep_for(std::chrono::seconds(2));
+  // std::cout << "Sleeping for 5 seconds..." << std::endl;
+  // std::this_thread::sleep_for(std::chrono::seconds(5));
+  // std::cout << "Awake now!" << std::endl;
+}
 }
 
 int main(int argc, char **argv) {
-  return runtime_main_init(argc, argv, [](int, char **) { do_work(); });
+  return runtime_main_init(argc, argv, [](int, char **) { UserCode::do_work(); });
 }

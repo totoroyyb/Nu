@@ -33,12 +33,18 @@ extern "C" {
 
 #ifdef DDB_SUPPORT
 // Use service_reporter header for service discovery
+#define DEFINE_DDB_META
+#include "ddb/common.h"
+#include "ddb/basic.h"
+
 #include "nu/utils/service_reporter.h"
 #endif
 
 namespace nu {
 
-DDBMetadata ddb_meta = {0, 0};
+// #ifdef DDB_SUPPORT
+// DDBMetadata ddb_meta = {0, 0};
+// #endif
 
 Runtime::Runtime() {}
 

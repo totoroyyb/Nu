@@ -131,21 +131,21 @@ Runtime::__run_within_proclet_env(void *proclet_base, void (*fn)(A0s...),
   }
   auto &migration_guard = *optional_migration_guard;
 
-#ifdef DEBUG
-  DEBUG_P_STARTS();
-  nu::utils::function_traits<decltype(fn)>::print_signature();
-  DEBUG_P_ENDS();
-#endif
+// #ifdef DEBUG
+//   DEBUG_P_STARTS();
+//   nu::utils::function_traits<decltype(fn)>::print_signature();
+//   DEBUG_P_ENDS();
+// #endif
 
   auto proclet_id = to_proclet_id(proclet_header);
 
-#ifdef DEBUG
-  DEBUG_P_STARTS();
-  auto ip_addr = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
-  std::cout << "Run Proclet " << proclet_id << " on " << ip_addr << std::endl;
-  std::cout << "Run Proclet... Original thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
-  DEBUG_P_ENDS();
-#endif
+// #ifdef DEBUG
+//   DEBUG_P_STARTS();
+//   auto ip_addr = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
+//   std::cout << "Run Proclet " << proclet_id << " on " << ip_addr << std::endl;
+//   std::cout << "Run Proclet... Original thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+//   DEBUG_P_ENDS();
+// #endif
 
   auto *obj_ptr = get_current_root_obj<Cls>();
   fn(&migration_guard, obj_ptr, std::forward<A1s>(args)...);
@@ -357,45 +357,4 @@ inline Runtime *get_runtime() {
   runtime_check(runtime);
   return runtime;
 }
-
-#ifdef DDB_SUPPORT
-inline void populate_ddb_metadata(const std::string& ifa_name) {
-  struct ifaddrs *ifaddr, *ifa;
-  int family;
-
-  if (getifaddrs(&ifaddr) == -1) {
-    perror("getifaddrs");
-    goto free_ifaddrs;
-  }
-
-  for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
-    if (ifa->ifa_addr == nullptr) {
-      continue;
-    }
-
-    family = ifa->ifa_addr->sa_family;
-
-    if (strcmp(ifa->ifa_name, ifa_name.c_str()) == 0 && family == AF_INET) {  // AF_INET for IPv4
-      struct sockaddr_in *ipv4 = (struct sockaddr_in *)ifa->ifa_addr;
-      ddb_meta.comm_ip = htonl(ipv4->sin_addr.s_addr);
-      ddb_meta.comm_port = htons(ipv4->sin_port);
-      inet_ntop(AF_INET, &(ipv4->sin_addr), ddb_meta.host, NI_MAXHOST);
-
-#ifdef DEBUG 
-      std::cout << "----" << std::endl;
-      std::cout << "Interface " << ifa->ifa_name << "; host: " << ddb_meta.host << "; raw ip: " << ddb_meta.comm_ip << std::endl;
-      std::cout << "----" << std::endl;
-#endif // DEBUG
-      break;
-    }
-  }
-
-free_ifaddrs:
-  freeifaddrs(ifaddr);
-  if (ddb_meta.comm_ip == 0) {
-    std::cout << "ifa ip address is not initialized." << std::endl;
-  }
-}
-#endif
-
 }  // namespace nu

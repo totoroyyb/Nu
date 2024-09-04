@@ -9,6 +9,10 @@
 #include "nu/utils/utils.hpp"
 #include <iostream> 
 
+#ifdef DDB_SUPPORT
+#include "ddb/backtrace.h"
+#endif
+
 namespace nu {
 
 RPCServer::RPCServer()
@@ -80,18 +84,18 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
     case kProcletCall: {
       args = args.subspan(sizeof(RPCReqType));
 #ifdef DDB_SUPPORT
-      __attribute__((used)) auto meta = from_span<RPCReqProcletCallDebugMeta>(args);
+      __attribute__((used)) auto meta = from_span<DDBTraceMeta>(args);
       uint64_t magic = meta.magic;
-      std::cout << "magic: " << magic << "tMetaMagic: " << tMetaMagic << std::endl;
-      assert(magic == tMetaMagic);
-#ifdef DEBUG
-      DEBUG_P_STARTS();
-      std::cout << "RIP: 0x" << std::hex << meta.rip << ", RSP: 0x" << std::hex << meta.rsp << std::endl;
-      std::cout << "Embeded caller communication ip: " << utils::IPUtils::uint32_to_str(meta.caller_comm_ip) << "; raw ip: " << std::dec << meta.caller_comm_ip << std::endl;
-      std::cout << "Local communication ip: " << utils::IPUtils::uint32_to_str(ddb_meta.comm_ip) << "; raw ip: " << std::dec << ddb_meta.comm_ip << std::endl;
-      std::cout << "Parent PID: " << meta.pid << std::endl;
-      DEBUG_P_ENDS();
-#endif
+      // std::cout << "magic: " << magic << "tMetaMagic: " << tMetaMagic << std::endl;
+      assert(magic == T_META_MATIC);
+// #ifdef DEBUG
+//       DEBUG_P_STARTS();
+//       std::cout << "RIP: 0x" << std::hex << meta.rip << ", RSP: 0x" << std::hex << meta.rsp << std::endl;
+//       std::cout << "Embeded caller communication ip: " << utils::IPUtils::uint32_to_str(meta.caller_comm_ip) << "; raw ip: " << std::dec << meta.caller_comm_ip << std::endl;
+//       std::cout << "Local communication ip: " << utils::IPUtils::uint32_to_str(ddb_meta.comm_ip) << "; raw ip: " << std::dec << ddb_meta.comm_ip << std::endl;
+//       std::cout << "Parent PID: " << meta.pid << std::endl;
+//       DEBUG_P_ENDS();
+// #endif
       args = args.subspan(sizeof(RPCReqProcletCallDebugMeta));
 #endif
       get_runtime()->proclet_server()->parse_and_run_handler(args, returner);

@@ -24,9 +24,9 @@ function setup_trust_dscp {
     sudo mlnx_qos -i $nic_dev --trust dscp
 }
 
-function setup_dropless_rq {
-    sudo ethtool --set-priv-flags $nic_dev dropless_rq on
-}
+# function setup_dropless_rq {
+#     sudo ethtool --set-priv-flags $nic_dev dropless_rq on
+# }
 
 trap -- '' INT TERM
 
@@ -34,4 +34,4 @@ setup_caladan
 get_nic_dev
 setup_jumbo_frame
 setup_trust_dscp
-setup_dropless_rq
+# setup_dropless_rq

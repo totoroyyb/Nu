@@ -35,12 +35,14 @@ class RPCReturner;
 class SlabAllocator;
 class Caladan;
 
-struct DDBMetadata {
-  uint32_t comm_ip;
-  uint16_t comm_port;
-  // readable hostname
-  char host[NI_MAXHOST];
-} __attribute__((packed));
+// #ifdef DDB_SUPPORT
+// struct DDBMetadata {
+//   uint32_t comm_ip;
+//   uint16_t comm_port;
+//   // readable hostname
+//   char host[NI_MAXHOST];
+// } __attribute__((packed));
+// #endif
 
 struct RPCReqReserveConns {
   RPCReqType rpc_type = kReserveConns;
@@ -51,7 +53,9 @@ struct RPCReqShutdown {
   RPCReqType rpc_type = kShutdown;
 };
 
-extern DDBMetadata ddb_meta;
+// #ifdef DDB_SUPPORT
+// extern DDBMetadata ddb_meta;
+// #endif
 
 class Runtime {
  public:
@@ -197,9 +201,9 @@ int runtime_main_init(int argc, char **argv,
                       std::function<void(int argc, char **argv)> main_func);
 Runtime *get_runtime();
 
-#ifdef DDB_SUPPORT
-void populate_ddb_metadata(const std::string& ifa_name);
-#endif
+// #ifdef DDB_SUPPORT
+// void populate_ddb_metadata(const std::string& ifa_name);
+// #endif
 
 }  // namespace nu
 

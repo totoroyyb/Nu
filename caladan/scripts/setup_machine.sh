@@ -24,7 +24,7 @@ done
 echo 0 | sudo tee /proc/sys/kernel/randomize_va_space >/dev/null
 
 # enable page prezeroing
-echo 1 > /sys/kernel/mm/zero_page/enabled
+# echo 1 > /sys/kernel/mm/zero_page/enabled
 
 # load msr module
 modprobe msr

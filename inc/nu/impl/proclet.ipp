@@ -22,6 +22,10 @@ extern "C" {
 #include "nu/utils/future.hpp"
 #include "nu/utils/utils.hpp"
 
+#ifdef DDB_SUPPORT
+#include "ddb/backtrace.h"
+#endif
+
 namespace nu {
 
 struct ProcletHeader;
@@ -39,24 +43,30 @@ inline void serialize(auto *oa_sstream, S1s &&... states) {
 }
 
 #ifdef DDB_SUPPORT
-inline void fetch_register(uintptr_t *rip, uintptr_t *rsp) {
-    void* rspTemp;
-    asm volatile ("mov %%rsp, %0" : "=r" (rspTemp));
-    *rsp = reinterpret_cast<uintptr_t>(rspTemp);
-    *rip = reinterpret_cast<uintptr_t>(__builtin_return_address(0)); // Approximation to get RIP
-}
+// inline void fetch_register(uintptr_t *rip, uintptr_t *rsp, uintptr_t *rbp) {
+//     void* rspTemp; 
+//     void* rbpTemp;
+//     asm volatile ("mov %%rsp, %0" : "=r" (rspTemp));
+//     asm volatile ("mov %%rbp, %0" : "=r"(rbpTemp));
+//     *rsp = reinterpret_cast<uintptr_t>(rspTemp);
+//     *rip = reinterpret_cast<uintptr_t>(__builtin_return_address(0)); // Approximation to get RIP
+//     *rbp = reinterpret_cast<uintptr_t>(rbpTemp);
+// }
 
 template <typename... S1s>
 inline void serialize_embeded(auto *oa_sstream, S1s &&... states) {
-  uintptr_t rip, rsp;
-  fetch_register(&rip, &rsp);
-  auto meta = RPCReqProcletCallDebugMeta{
-    tMetaMagic,
-    ddb_meta.comm_ip,
-    rip,
-    rsp,
-    getpid()
-  };
+  DDBTraceMeta meta;
+  get_trace_meta(&meta);
+  // uintptr_t rip, rsp, rbp;
+  // fetch_register(&rip, &rsp, &rbp);
+  // auto meta = RPCReqProcletCallDebugMeta{
+  //   tMetaMagic,
+  //   ddb_meta.comm_ip,
+  //   rip,
+  //   rsp,
+  //   rbp,
+  //   getpid()
+  // };
   serialize(oa_sstream, meta, std::forward<S1s>(states)...);
 }
 #endif
@@ -89,16 +99,16 @@ retry:
 
   auto *client = get_runtime()->rpc_client_mgr()->get_by_proclet_id(id);
 
-#ifdef DEBUG
-  auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
-  auto local_proclet_id = to_proclet_id(caller_header);
-  auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
-  std::cout << std::endl;
-  std::cout << "Sending RPC (no return)..." << std::endl;
-  std::cout << "\tFROM: \tProclet id: " << local_proclet_id << "; \tNode IP: " << local_ip << std::endl;
-  std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
-  std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
-#endif
+// #ifdef DEBUG
+//   auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
+//   auto local_proclet_id = to_proclet_id(caller_header);
+//   auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
+//   std::cout << std::endl;
+//   std::cout << "Sending RPC (no return)..." << std::endl;
+//   std::cout << "\tFROM: \tProclet id: " << local_proclet_id << "; \tNode IP: " << local_ip << std::endl;
+//   std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
+//   std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+// #endif
 
   rc = client->Call(args_span, &return_buf);
   if (unlikely(rc == kErrWrongClient)) {
@@ -145,16 +155,16 @@ retry:
 
   auto *client = get_runtime()->rpc_client_mgr()->get_by_proclet_id(id);
 
-  #ifdef DEBUG
-  auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
-  auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
-  auto local_proclet_id = to_proclet_id(caller_header);
-  std::cout << "Sending RPC (with return)..." << std::endl;
-  std::cout << "\tFROM: \tProclet id: " << local_proclet_id << "; \tNode IP: " << local_ip << std::endl;
-  std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
-  // std::cout << "Sending RPC (with return)... Orginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
-  std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
-  #endif
+  // #ifdef DEBUG
+  // auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
+  // auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
+  // auto local_proclet_id = to_proclet_id(caller_header);
+  // std::cout << "Sending RPC (with return)..." << std::endl;
+  // std::cout << "\tFROM: \tProclet id: " << local_proclet_id << "; \tNode IP: " << local_ip << std::endl;
+  // std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
+  // // std::cout << "Sending RPC (with return)... Orginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+  // std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
+  // #endif
 
   rc = client->Call(args_span, &return_buf);
   if (unlikely(rc == kErrWrongClient)) {
@@ -274,12 +284,12 @@ Proclet<T> Proclet<T>::__create(bool pinned, uint64_t capacity, NodeIP ip_hint,
     }
   }
 
-  #ifdef DEBUG
-  std::cout << "Created Proclet: " << std::endl;
-  std::cout << "\tid: " << callee_id << std::endl;
-  std::cout << "\tip: " << utils::IPUtils::uint32_to_str(server_ip) << std::endl;
-  std::cout << "\tlocal caladan ip: " << utils::IPUtils::uint32_to_str(get_cfg_ip()) << std::endl;
-  #endif
+  // #ifdef DEBUG
+  // std::cout << "Created Proclet: " << std::endl;
+  // std::cout << "\tid: " << callee_id << std::endl;
+  // std::cout << "\tip: " << utils::IPUtils::uint32_to_str(server_ip) << std::endl;
+  // std::cout << "\tlocal caladan ip: " << utils::IPUtils::uint32_to_str(get_cfg_ip()) << std::endl;
+  // #endif
 
   if (server_ip == get_cfg_ip()) {
     // Fast path: the proclet is actually local, use normal function call.
@@ -626,13 +636,13 @@ inline Future<Proclet<T>> make_proclet_async(std::tuple<As...> args_tuple,
 template <typename T>
 inline Proclet<T> make_proclet(bool pinned, std::optional<uint64_t> capacity,
                                std::optional<NodeIP> ip_hint) {
-  #ifdef DEBUG
-  std::cout << "make_proclet_no_args()..." << std::endl;
-  std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
-  if (ip_hint.has_value()) {
-    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
-  }
-  #endif
+  // #ifdef DEBUG
+  // std::cout << "make_proclet_no_args()..." << std::endl;
+  // std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
+  // if (ip_hint.has_value()) {
+  //   std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
+  // }
+  // #endif
 
   return Proclet<T>::__create(
       pinned, capacity.value_or(kDefaultProcletHeapSize), ip_hint.value_or(0));

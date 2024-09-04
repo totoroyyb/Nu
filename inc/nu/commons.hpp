@@ -12,19 +12,20 @@ namespace nu {
 #error Must indicate number of CPU cores
 #endif
 
-#ifdef DDB_SUPPORT
-/// @brief  Added magic number for testing RPCRewqProcletCallDebugMeta
-constexpr static uint64_t tMetaMagic = 12345;
+// #ifdef DDB_SUPPORT
+// /// @brief  Added magic number for testing RPCRewqProcletCallDebugMeta
+// constexpr static uint64_t tMetaMagic = 12345;
 
-/// @brief  Added data structure for backtrace
-struct RPCReqProcletCallDebugMeta {
-  uint64_t magic;
-  uint32_t caller_comm_ip;
-  uintptr_t rip;
-  uintptr_t rsp;
-  pid_t pid;
-} __attribute__((packed));
-#endif
+// /// @brief  Added data structure for backtrace
+// struct RPCReqProcletCallDebugMeta {
+//   uint64_t magic;
+//   uint32_t caller_comm_ip;
+//   uintptr_t rip;
+//   uintptr_t rsp;
+//   uintptr_t rbp;
+//   pid_t pid;
+// } __attribute__((packed));
+// #endif
 
 using ProcletID = uint64_t;
 using lpid_t = uint16_t;
