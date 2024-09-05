@@ -1,3 +1,7 @@
+#ifdef DDB_SUPPORT
+#include "ddb/backtrace.h"
+#endif
+
 #include "nu/rpc_server.hpp"
 
 #include "nu/commons.hpp"
@@ -9,9 +13,6 @@
 #include "nu/utils/utils.hpp"
 #include <iostream> 
 
-#ifdef DDB_SUPPORT
-#include "ddb/backtrace.h"
-#endif
 
 namespace nu {
 
@@ -84,7 +85,7 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
     case kProcletCall: {
       args = args.subspan(sizeof(RPCReqType));
 #ifdef DDB_SUPPORT
-      __attribute__((used)) auto meta = from_span<DDBTraceMeta>(args);
+      volatile __attribute__((used)) auto meta = from_span<DDBTraceMeta>(args);
       uint64_t magic = meta.magic;
       // std::cout << "magic: " << magic << "tMetaMagic: " << tMetaMagic << std::endl;
       assert(magic == T_META_MATIC);

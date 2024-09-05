@@ -12,6 +12,10 @@ extern "C" {
 #include <runtime/net.h>
 }
 
+#ifdef DDB_SUPPORT
+#include "ddb/backtrace.h"
+#endif
+
 #include "nu/ctrl_client.hpp"
 #include "nu/exception.hpp"
 #include "nu/proclet_server.hpp"
@@ -22,9 +26,7 @@ extern "C" {
 #include "nu/utils/future.hpp"
 #include "nu/utils/utils.hpp"
 
-#ifdef DDB_SUPPORT
-#include "ddb/backtrace.h"
-#endif
+
 
 namespace nu {
 

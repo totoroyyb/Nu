@@ -14,15 +14,15 @@ namespace utils {
     #define DEBUG_P_STARTS() nu::utils::debug_print_starts(__FILE__, __LINE__, __func__)
     #define DEBUG_P_ENDS() nu::utils::debug_print_ends()
 
-    static void debug_print(std::string message, const char* file, int line, const char* func) {
+    [[maybe_unused]] static void debug_print(std::string message, const char* file, int line, const char* func) {
         std::cout << "****** " << file << ":" << line << " " << func << " ******\n" << message << "****** ENDS ******" << std::endl;
     }
 
-    static void debug_print_starts(const char* file, int line, const char* func) {
+    [[maybe_unused]] static void debug_print_starts(const char* file, int line, const char* func) {
         std::cout << "****** " << file << ":" << line << " " << func << " ******" << std::endl;
     }
 
-    static void debug_print_ends() {
+    [[maybe_unused]] static void debug_print_ends() {
         std::cout << "****** ENDS ******" << std::endl;
     }
 
