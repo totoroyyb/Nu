@@ -67,16 +67,16 @@ enum {
 void mark_task_parked(struct task_struct *tsk)
 {
 	/* borrow the trace field here which is origally used by Ftrace */
-	tsk->trace = PARKED;
+	tsk->trace_recursion = PARKED;
 }
 
 bool try_mark_task_unparked_locked(struct task_struct *tsk) {
 	bool success = false;
 
 	lockdep_assert_held(&tsk->pi_lock);
-	if (tsk->trace == PARKED) {
+	if (tsk->trace_recursion == PARKED) {
 		success = true;
-		tsk->trace = UNPARKED;
+		tsk->trace_recursion = UNPARKED;
 	}
 
 	return success;

@@ -6,3 +6,5 @@ iokerneld
 *~
 .cproject
 .project
+*.orig
+*.rej

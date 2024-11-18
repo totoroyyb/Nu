@@ -42,7 +42,7 @@ echo building DPDK
 
 disable_driver='crypto/*,net/bnxt'
 
-if lspci | grep -q 'ConnectX-[4,5,6]'; then
+if lspci | grep -q 'ConnectX-[4,5,6,7]'; then
   # build against local rdma-core library
   export EXTRA_CFLAGS=-I$PWD/rdma-core/build/include
   export EXTRA_LDFLAGS=-L$PWD/rdma-core/build/lib
