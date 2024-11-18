@@ -13,7 +13,7 @@ extern "C" {
 }
 
 #ifdef DDB_SUPPORT
-#include "ddb/backtrace.h"
+#include "ddb/backtrace.hpp"
 #endif
 
 #include "nu/ctrl_client.hpp"
@@ -45,30 +45,10 @@ inline void serialize(auto *oa_sstream, S1s &&... states) {
 }
 
 #ifdef DDB_SUPPORT
-// inline void fetch_register(uintptr_t *rip, uintptr_t *rsp, uintptr_t *rbp) {
-//     void* rspTemp; 
-//     void* rbpTemp;
-//     asm volatile ("mov %%rsp, %0" : "=r" (rspTemp));
-//     asm volatile ("mov %%rbp, %0" : "=r"(rbpTemp));
-//     *rsp = reinterpret_cast<uintptr_t>(rspTemp);
-//     *rip = reinterpret_cast<uintptr_t>(__builtin_return_address(0)); // Approximation to get RIP
-//     *rbp = reinterpret_cast<uintptr_t>(rbpTemp);
-// }
-
 template <typename... S1s>
 inline void serialize_embeded(auto *oa_sstream, S1s &&... states) {
-  DDBTraceMeta meta;
-  get_trace_meta(&meta);
-  // uintptr_t rip, rsp, rbp;
-  // fetch_register(&rip, &rsp, &rbp);
-  // auto meta = RPCReqProcletCallDebugMeta{
-  //   tMetaMagic,
-  //   ddb_meta.comm_ip,
-  //   rip,
-  //   rsp,
-  //   rbp,
-  //   getpid()
-  // };
+  DDB::DDBTraceMeta meta;
+  DDB::get_trace_meta(&meta);
   serialize(oa_sstream, meta, std::forward<S1s>(states)...);
 }
 #endif

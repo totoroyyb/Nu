@@ -23,7 +23,10 @@ struct OptionsDesc {
 struct NuOptionsDesc : public OptionsDesc {
   std::string ctrl_ip_str;
   lpid_t lpid;
-  std::string ifa_name;
+#ifdef DDB_SUPPORT
+  // std::string ifa_name;
+  std::string ddb_ip;
+#endif
 
   NuOptionsDesc(bool help = true);
 };

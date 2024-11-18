@@ -18,13 +18,7 @@ extern "C" {
 #include <thread.h>
 
 #ifdef DDB_SUPPORT
-// Use service_reporter header for service discovery
-#define DEFINE_DDB_META
-#include "ddb/common.h"
-#include "ddb/basic.h"
-#include "ddb/service_reporter.h"
-
-// #include "nu/utils/service_reporter.h"
+#include "ddb/integration.hpp"
 #endif
 
 #include "nu/command_line.hpp"
@@ -41,10 +35,6 @@ extern "C" {
 #include "nu/utils/slab.hpp"
 
 namespace nu {
-
-// #ifdef DDB_SUPPORT
-// DDBMetadata ddb_meta = {0, 0};
-// #endif
 
 Runtime::Runtime() {}
 
@@ -180,7 +170,6 @@ int runtime_main_init(int argc, char **argv,
                                                 : nu::Runtime::Mode::kServer;
   auto ctrl_ip = str_to_ip(all_options_desc.nu.ctrl_ip_str);
   auto lpid = all_options_desc.nu.lpid;
-  auto ifa_name = all_options_desc.nu.ifa_name;
   auto conf_path = all_options_desc.caladan.conf_path;
   auto isol = all_options_desc.vm.count("isol");
   if (conf_path.empty()) {
@@ -188,29 +177,13 @@ int runtime_main_init(int argc, char **argv,
     write_options_to_file(conf_path, all_options_desc);
   }
 
-#ifdef DEBUG
-  std::cout << "ctrl_ip: " << all_options_desc.nu.ctrl_ip_str << std::endl;
-  std::cout << "isol: " << isol << std::endl;
-  std::cout << "ifa_name: " << ifa_name << std::endl;
-#endif // DEBUG
-
 #ifdef DDB_SUPPORT
-  populate_ddb_metadata(ifa_name.c_str());
-
-  auto service = ServiceInfo {
-    .ip = ddb_meta.comm_ip,
-    .tag = (char*)"nu_proc",
-    .pid = getpid()
-  };
-
-  DDBServiceReporter reporter;
-
-  if (service_reporter_init(&reporter) != 0) {
-    std::cerr << "failed to initialize service reporter" << std::endl;
-  } else {
-    if (report_service(&reporter, &service) != 0) {
-      std::cerr << "failed to report new service" << std::endl;
-    }
+  auto enable_ddb = all_options_desc.vm.count("ddb");
+  auto ddb_ip = all_options_desc.nu.ddb_ip;
+  if (enable_ddb) {
+    auto ddb_config = DDB::Config::get_default(ddb_ip);
+    auto connector = DDB::DDBConnector(ddb_config);
+    connector.init();
   }
 #endif
 
@@ -246,11 +219,8 @@ int runtime_main_init(int argc, char **argv,
     return ret;
   }
 
-#ifdef DDB_SUPPORT
-  int ret_val = service_reporter_deinit(&reporter);
-  if (ret_val)
-    std::cerr << "failed to deinit service reporter" << std::endl;
-#endif
+// #ifdef DDB_SUPPORT
+// #endif
 
   return 0;
 }

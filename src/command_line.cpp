@@ -61,7 +61,10 @@ NuOptionsDesc::NuOptionsDesc(bool help) : OptionsDesc("Nu arguments", help) {
     ("nomemps", "don't react to memory pressure")
     ("nocpups", "don't react to CPU pressure")
     ("isol", "as an isolated node")
-    ("ifaname", boost::program_options::value(&ifa_name)->default_value("enp1s0f0"), "interface name to capture at runtime initialization");
+  #ifdef DDB_SUPPORT
+    ("ddb", "enable DDB")
+    ("ddbip", boost::program_options::value(&ddb_ip)->default_value("10.10.1.1"), "ddb ip capture at runtime initialization");
+  #endif
 }
 
 CaladanOptionsDesc::CaladanOptionsDesc(int default_guaranteed,
@@ -101,6 +104,11 @@ void write_options_to_file(std::string path, const AllOptionsDesc &desc) {
   if (!desc.vm.count("nocpups")) {
     ofs << "runtime_react_cpu_pressure 1" << std::endl;
   }
+#ifdef DDB_SUPPORT
+  if (!desc.vm.count("ddb")) {
+    ofs << "runtime_enable_ddb 1 " << desc.nu.ddb_ip << std::endl;
+  }
+#endif
 }
 
 void write_options_to_file(std::string path, const CaladanOptionsDesc &desc) {
