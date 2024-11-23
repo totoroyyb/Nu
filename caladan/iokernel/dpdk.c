@@ -257,11 +257,21 @@ int dpdk_init(void)
 int dpdk_late_init(void)
 {
 	/* initialize port */
-	dp.port = 1;
+	dp.port = 0;
 	if (dpdk_port_init(dp.port, dp.rx_mbuf_pool) != 0) {
 		log_err("dpdk: cannot init port %"PRIu8 "\n", dp.port);
 		return -1;
 	}
 
+  // uint16_t nb_ports = rte_eth_dev_count_avail();
+  // for (uint16_t port_id = 0; port_id < nb_ports; port_id++) {
+  //     struct rte_eth_dev_info dev_info;
+  //     rte_eth_dev_info_get(port_id, &dev_info);
+  //     printf("Port ID: %u, Driver: %s, PCI Address: %s\n",
+  //             port_id,
+  //             dev_info.driver_name,
+  //             dev_info.device->name);
+  // }
+  //
 	return 0;
 }
