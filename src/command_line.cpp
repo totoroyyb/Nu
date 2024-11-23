@@ -104,11 +104,6 @@ void write_options_to_file(std::string path, const AllOptionsDesc &desc) {
   if (!desc.vm.count("nocpups")) {
     ofs << "runtime_react_cpu_pressure 1" << std::endl;
   }
-#ifdef DDB_SUPPORT
-  if (!desc.vm.count("ddb")) {
-    ofs << "runtime_enable_ddb 1 " << desc.nu.ddb_ip << std::endl;
-  }
-#endif
 }
 
 void write_options_to_file(std::string path, const CaladanOptionsDesc &desc) {
