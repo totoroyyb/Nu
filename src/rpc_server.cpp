@@ -86,7 +86,11 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
       args = args.subspan(sizeof(RPCReqType));
 #ifdef DDB_SUPPORT
       DDB::Backtrace::extraction(
-        [&args]() -> DDB::DDBTraceMeta { return from_span<DDB::DDBTraceMeta>(args); },
+        [&args]() -> DDB::DDBTraceMeta { 
+          auto meta = from_span<DDB::DDBTraceMeta>(args); 
+          args = args.subspan(sizeof(DDB::DDBTraceMeta));
+          return meta;
+        },
         [&args, &returner]() {
           get_runtime()->proclet_server()->parse_and_run_handler(args, returner);
           args = args.subspan(sizeof(DDB::DDBTraceMeta));
