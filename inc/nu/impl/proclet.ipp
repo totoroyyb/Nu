@@ -32,6 +32,15 @@ namespace nu {
 
 struct ProcletHeader;
 
+#ifdef DDB_SUPPORT
+template <typename... S1s>
+inline void serialize_embeded(auto *oa_sstream, S1s &&... states) {
+  DDB::DDBTraceMeta meta;
+  DDB::get_trace_meta(&meta);
+  serialize(oa_sstream, meta, std::forward<S1s>(states)...);
+}
+#endif
+
 template <typename... S1s>
 inline void serialize(auto *oa_sstream, S1s &&... states) {
   auto &ss = oa_sstream->ss;
@@ -43,15 +52,6 @@ inline void serialize(auto *oa_sstream, S1s &&... states) {
   auto &oa = oa_sstream->oa;
   ((oa << std::forward<S1s>(states)), ...);
 }
-
-#ifdef DDB_SUPPORT
-template <typename... S1s>
-inline void serialize_embeded(auto *oa_sstream, S1s &&... states) {
-  DDB::DDBTraceMeta meta;
-  DDB::get_trace_meta(&meta);
-  serialize(oa_sstream, meta, std::forward<S1s>(states)...);
-}
-#endif
 
 template <typename T>
 template <typename... S1s>
