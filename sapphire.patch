@@ -1,0 +1,26 @@
+From a0530d25adbc81178f0c1d28f74af66c498570e0 Mon Sep 17 00:00:00 2001
+From: Yibo Yan <yiboyan@usc.edu>
+Date: Mon, 2 Dec 2024 06:08:09 +0000
+Subject: [PATCH] mod: adjust the stack size so it doesn't conflict with other
+ regions
+
+---
+ inc/nu/commons.hpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/inc/nu/commons.hpp b/inc/nu/commons.hpp
+index f10cbb6..ce92e65 100644
+--- a/inc/nu/commons.hpp
++++ b/inc/nu/commons.hpp
+@@ -104,7 +104,7 @@ constexpr static uint64_t kMaxNumProclets =
+         kMinProcletHeapSize +
+     1;
+ constexpr static uint64_t kMinStackClusterVAddr = kMaxProcletHeapVAddr;
+-constexpr static uint64_t kMaxStackClusterVAddr = 0x600000000000ULL;
++constexpr static uint64_t kMaxStackClusterVAddr = 0x500000000000ULL;
+ constexpr static uint64_t kStackClusterSize = 1ULL << 31;
+ constexpr static uint64_t kMaxNumStacksPerCluster =
+     kStackClusterSize / kStackSize;
+-- 
+2.43.0
+
