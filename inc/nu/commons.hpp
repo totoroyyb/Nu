@@ -104,7 +104,7 @@ constexpr static uint64_t kMaxNumProclets =
         kMinProcletHeapSize +
     1;
 constexpr static uint64_t kMinStackClusterVAddr = kMaxProcletHeapVAddr;
-constexpr static uint64_t kMaxStackClusterVAddr = 0x600000000000ULL;
+constexpr static uint64_t kMaxStackClusterVAddr = 0x500000000000ULL;
 constexpr static uint64_t kStackClusterSize = 1ULL << 31;
 constexpr static uint64_t kMaxNumStacksPerCluster =
     kStackClusterSize / kStackSize;
