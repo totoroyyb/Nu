@@ -11,10 +11,10 @@ LPID=1
 CTL_IDX=1
 NGINX_SRV_IDX=2 # NGINX should be running on a server which doesn't have iokerneld as iokernel will grab the NIC
 NGINX_SRV_CALADAN_IP_AND_MASK=18.18.1.254/24
-CLT_START_IDX=2
-CLT_END_IDX=2 #inclusive
+CLT_START_IDX=1
+CLT_END_IDX=1 #inclusive
 
-NGINX_NIC="ens1f1"
+# NGINX_NIC="ens1f1"
 
 DIR=$(pwd)
 SOCIAL_NET_DIR=$DIR/../../../app/socialNetwork/single_proclet/
@@ -38,8 +38,8 @@ run_cmd $NGINX_SRV_IDX "sudo service docker stop;
                         sudo service docker start;"
 run_cmd $NGINX_SRV_IDX "cd $SOCIAL_NET_DIR; ./install_docker.sh"
 run_cmd $NGINX_SRV_IDX "cd $SOCIAL_NET_DIR; ./down_nginx.sh; ./up_nginx.sh"
-# run_cmd $NGINX_SRV_IDX "sudo ip addr add $NGINX_SRV_CALADAN_IP_AND_MASK dev $nic_dev"
-run_cmd $NGINX_SRV_IDX "sudo ip addr add $NGINX_SRV_CALADAN_IP_AND_MASK dev $NGINX_NIC"
+run_cmd $NGINX_SRV_IDX "sudo ip addr add $NGINX_SRV_CALADAN_IP_AND_MASK dev $nic_dev"
+# run_cmd $NGINX_SRV_IDX "sudo ip addr add $NGINX_SRV_CALADAN_IP_AND_MASK dev $NGINX_NIC"
 
 # for num_srvs in `seq 1 25`
 num_srvs=1
