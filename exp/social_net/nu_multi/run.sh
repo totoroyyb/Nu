@@ -8,13 +8,11 @@ DISK_DEV=/dev/sdb
 SKIP_BUILD=1
 
 LPID=1
-CTL_IDX=1
-NGINX_SRV_IDX=2 # NGINX should be running on a server which doesn't have iokerneld as iokernel will grab the NIC
+CTL_IDX=11
+NGINX_SRV_IDX=12 # NGINX should be running on a server which doesn't have iokerneld as iokernel will grab the NIC
 NGINX_SRV_CALADAN_IP_AND_MASK=18.18.1.254/24
-CLT_START_IDX=1
-CLT_END_IDX=1 #inclusive
-
-# NGINX_NIC="ens1f1"
+CLT_START_IDX=10
+CLT_END_IDX=10 #inclusive
 
 DIR=$(pwd)
 SOCIAL_NET_DIR=$DIR/../../../app/socialNetwork/single_proclet/
@@ -39,10 +37,9 @@ run_cmd $NGINX_SRV_IDX "sudo service docker stop;
 run_cmd $NGINX_SRV_IDX "cd $SOCIAL_NET_DIR; ./install_docker.sh"
 run_cmd $NGINX_SRV_IDX "cd $SOCIAL_NET_DIR; ./down_nginx.sh; ./up_nginx.sh"
 run_cmd $NGINX_SRV_IDX "sudo ip addr add $NGINX_SRV_CALADAN_IP_AND_MASK dev $nic_dev"
-# run_cmd $NGINX_SRV_IDX "sudo ip addr add $NGINX_SRV_CALADAN_IP_AND_MASK dev $NGINX_NIC"
 
 # for num_srvs in `seq 1 25`
-num_srvs=1
+num_srvs=2
 # do
 mops=${MOPS[$(expr $num_srvs - 1)]}
 
@@ -59,23 +56,23 @@ if [[ "$SKIP_BUILD" == "0" ]]; then
   cd ..
 fi
 
-for srv_idx in $(seq 1 $num_srvs); do
-  run_cmd $srv_idx "mkdir -p $(pwd)/build/src"
-  distribute build/src/main $srv_idx
-done
+# for srv_idx in $(seq 1 $num_srvs); do
+#   run_cmd $srv_idx "mkdir -p $(pwd)/build/src"
+#   distribute build/src/main $srv_idx
+# done
+#
+# for clt_idx in $(seq $CLT_START_IDX $CLT_END_IDX); do
+#   run_cmd $clt_idx "mkdir -p $(pwd)/build/bench"
+#   distribute build/bench/client $clt_idx
+# done
 
-for clt_idx in $(seq $CLT_START_IDX $CLT_END_IDX); do
-  run_cmd $clt_idx "mkdir -p $(pwd)/build/bench"
-  distribute build/bench/client $clt_idx
-done
-
-# start_iokerneld $CTL_IDX
+start_iokerneld $CTL_IDX
 for srv_idx in $(seq 1 $num_srvs); do
   start_iokerneld $srv_idx
 done
-# for clt_idx in $(seq $CLT_START_IDX $CLT_END_IDX); do
-#   start_iokerneld $clt_idx
-# done
+for clt_idx in $(seq $CLT_START_IDX $CLT_END_IDX); do
+  start_iokerneld $clt_idx
+done
 sleep 5
 
 start_ctrl $CTL_IDX
@@ -83,10 +80,10 @@ sleep 5
 
 for srv_idx in $(seq 1 $num_srvs); do
   if [[ $srv_idx -ne $num_srvs ]]; then
-    start_server build/src/main $srv_idx $LPID &
+    start_server build/src/main $srv_idx $LPID >$DIR/logs/.$srv_idx.tmp 2>&1 &
   else
     sleep 5
-    start_main_server build/src/main $srv_idx $LPID >$DIR/logs/.tmp &
+    start_main_server build/src/main $srv_idx $LPID >$DIR/logs/.tmp 2>&1 &
   fi
 done
 (tail -f -n0 $DIR/logs/.tmp &) | grep -q "Starting the ThriftBackEndServer"
@@ -96,6 +93,10 @@ echo "Init Social Graph"
 run_cmd $NGINX_SRV_IDX "cd $SOCIAL_NET_DIR; python3 scripts/init_social_graph.py"
 echo "Finish init Social Graph"
 sleep 5
+
+while true; do
+  sleep 5
+done
 
 client_pids=
 for clt_idx in $(seq $CLT_START_IDX $CLT_END_IDX); do

@@ -13,6 +13,7 @@ function ssh_ip() {
       awk '{print $6}' | head -c -2)
   fi
   srv_idx=$1
+  ssh_ip_prefix=${ssh_ip_prefix%.*}.
   echo $ssh_ip_prefix$srv_idx
 }
 
@@ -49,6 +50,19 @@ function start_iokerneld() {
 function start_ctrl() {
   srv_idx=$1
   ssh $(ssh_ip $srv_idx) "sudo stdbuf -o0 $NU_DIR/bin/ctrl_main" &
+  # dir_path=$NU_DIR/bin
+  # file_path=$dir_path/ctrl_main
+  # nu_libs_name=".nu_libs_$BASHPID"
+  # pushd $dir_path
+  # rm -rf $nu_libs_name
+  # mkdir -p $nu_libs_name
+  # cp $(ldd $file_path | grep "=>" | awk '{print $3}' | xargs) $nu_libs_name
+  # # ssh $(ssh_ip $srv_idx) "cd $dir_path; rm -rf $nu_libs_name"
+  # scp -r $nu_libs_name $(ssh_ip $srv_idx):$dir_path/
+  # popd
+  #
+  # echo "START CTRL"
+  # ssh $(ssh_ip $srv_idx) "cd $dir_path; sudo LD_LIBRARY_PATH=$nu_libs_name stdbuf -o0 $file_path" &
 }
 
 function __start_server() {
@@ -104,9 +118,7 @@ function run_program() {
   file_path=$(executable_file_path $1)
   srv_idx=$2
   args=${@:3}
-  set -x
   ssh $(ssh_ip $srv_idx) "cd $(pwd); sudo $file_path $args"
-  set +x
 }
 
 function run_cmd() {
