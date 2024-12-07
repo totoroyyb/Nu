@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include <array>
 #include <concepts>
 #include <cstdint>
@@ -5,16 +7,11 @@
 #include <sstream>
 #include <type_traits>
 #include <utility>
-#include <unistd.h>
 
 extern "C" {
 #include <base/assert.h>
 #include <runtime/net.h>
 }
-
-#ifdef DDB_SUPPORT
-#include "ddb/backtrace.hpp"
-#endif
 
 #include "nu/ctrl_client.hpp"
 #include "nu/exception.hpp"
@@ -26,23 +23,12 @@ extern "C" {
 #include "nu/utils/future.hpp"
 #include "nu/utils/utils.hpp"
 
-
-
 namespace nu {
 
 struct ProcletHeader;
 
-#ifdef DDB_SUPPORT
 template <typename... S1s>
-inline void serialize_embeded(auto *oa_sstream, S1s &&... states) {
-  DDB::DDBTraceMeta meta;
-  DDB::get_trace_meta(&meta);
-  serialize(oa_sstream, meta, std::forward<S1s>(states)...);
-}
-#endif
-
-template <typename... S1s>
-inline void serialize(auto *oa_sstream, S1s &&... states) {
+inline void serialize(auto *oa_sstream, S1s &&...states) {
   auto &ss = oa_sstream->ss;
   auto *rpc_type = const_cast<RPCReqType *>(
       reinterpret_cast<const RPCReqType *>(ss.view().data()));
@@ -56,17 +42,13 @@ inline void serialize(auto *oa_sstream, S1s &&... states) {
 template <typename T>
 template <typename... S1s>
 void Proclet<T>::invoke_remote(MigrationGuard &&caller_guard, ProcletID id,
-                               S1s &&... states) {
+                               S1s &&...states) {
   std::optional<MigrationGuard> optional_caller_guard;
   RuntimeSlabGuard slab_guard;
 
   auto *caller_header = get_runtime()->get_current_proclet_header();
   auto *oa_sstream = get_runtime()->archive_pool()->get_oa_sstream();
-#ifdef DDB_SUPPORT
-  serialize_embeded(oa_sstream, std::forward<S1s>(states)...);
-#else
   serialize(oa_sstream, std::forward<S1s>(states)...);
-#endif
   get_runtime()->detach();
   caller_guard.reset();
 
@@ -80,17 +62,6 @@ retry:
   auto args_span = std::span(states_data, states_size);
 
   auto *client = get_runtime()->rpc_client_mgr()->get_by_proclet_id(id);
-
-// #ifdef DEBUG
-//   auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
-//   auto local_proclet_id = to_proclet_id(caller_header);
-//   auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
-//   std::cout << std::endl;
-//   std::cout << "Sending RPC (no return)..." << std::endl;
-//   std::cout << "\tFROM: \tProclet id: " << local_proclet_id << "; \tNode IP: " << local_ip << std::endl;
-//   std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
-//   std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
-// #endif
 
   rc = client->Call(args_span, &return_buf);
   if (unlikely(rc == kErrWrongClient)) {
@@ -111,18 +82,14 @@ retry:
 template <typename T>
 template <typename RetT, typename... S1s>
 RetT Proclet<T>::invoke_remote_with_ret(MigrationGuard &&caller_guard,
-                                        ProcletID id, S1s &&... states) {
+                                        ProcletID id, S1s &&...states) {
   RetT ret;
   std::optional<MigrationGuard> optional_caller_guard;
   RuntimeSlabGuard slab_guard;
 
   auto *caller_header = get_runtime()->get_current_proclet_header();
   auto *oa_sstream = get_runtime()->archive_pool()->get_oa_sstream();
-#ifdef DDB_SUPPORT
-  serialize_embeded(oa_sstream, std::forward<S1s>(states)...);
-#else
   serialize(oa_sstream, std::forward<S1s>(states)...);
-#endif
   get_runtime()->detach();
   caller_guard.reset();
 
@@ -136,17 +103,6 @@ retry:
   auto args_span = std::span(states_data, states_size);
 
   auto *client = get_runtime()->rpc_client_mgr()->get_by_proclet_id(id);
-
-  // #ifdef DEBUG
-  // auto dest_ip = get_runtime()->rpc_client_mgr()->get_ip_str_by_proclet_id(id);
-  // auto local_ip = nu::utils::IPUtils::uint32_to_str(get_cfg_ip());
-  // auto local_proclet_id = to_proclet_id(caller_header);
-  // std::cout << "Sending RPC (with return)..." << std::endl;
-  // std::cout << "\tFROM: \tProclet id: " << local_proclet_id << "; \tNode IP: " << local_ip << std::endl;
-  // std::cout << "\tTO: \tProclet id: " << id << "; \tNode IP: " << dest_ip << std::endl;
-  // // std::cout << "Sending RPC (with return)... Orginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
-  // std::cout << "\tOriginal thread creator ip: " << nu::utils::IPUtils::uint32_to_str(thread_get_creator_ip()) << std::endl;
-  // #endif
 
   rc = client->Call(args_span, &return_buf);
   if (unlikely(rc == kErrWrongClient)) {
@@ -188,8 +144,7 @@ inline Proclet<T>::~Proclet() {
 }
 
 template <typename T>
-Proclet<T>::Proclet(const Proclet<T> &o)
-    : id_(o.id_) {
+Proclet<T>::Proclet(const Proclet<T> &o) : id_(o.id_) {
   if (id_ != kNullProcletID) {
     auto inc_ref_optional = update_ref_cnt(id_, 1);
     if (inc_ref_optional) {
@@ -227,7 +182,7 @@ inline Proclet<T> &Proclet<T>::operator=(Proclet<T> &&o) noexcept {
 template <typename T>
 template <typename... As>
 Proclet<T> Proclet<T>::__create(bool pinned, uint64_t capacity, NodeIP ip_hint,
-                                As &&... args) {
+                                As &&...args) {
   uint32_t server_ip;
   ProcletID callee_id;
   Proclet<T> callee_proclet;
@@ -269,9 +224,9 @@ Proclet<T> Proclet<T>::__create(bool pinned, uint64_t capacity, NodeIP ip_hint,
   // #ifdef DEBUG
   // std::cout << "Created Proclet: " << std::endl;
   // std::cout << "\tid: " << callee_id << std::endl;
-  // std::cout << "\tip: " << utils::IPUtils::uint32_to_str(server_ip) << std::endl;
-  // std::cout << "\tlocal caladan ip: " << utils::IPUtils::uint32_to_str(get_cfg_ip()) << std::endl;
-  // #endif
+  // std::cout << "\tip: " << utils::IPUtils::uint32_to_str(server_ip) <<
+  // std::endl; std::cout << "\tlocal caladan ip: " <<
+  // utils::IPUtils::uint32_to_str(get_cfg_ip()) << std::endl; #endif
 
   if (server_ip == get_cfg_ip()) {
     // Fast path: the proclet is actually local, use normal function call.
@@ -307,9 +262,10 @@ inline ProcletID Proclet<T>::get_id() const {
 template <typename T>
 template <bool MigrEn, bool CPUMon, bool CPUSamp, typename RetT,
           typename... S0s, typename... S1s>
-inline Future<RetT> Proclet<T>::run_async(
-    RetT (*fn)(T &, S0s...),
-    S1s &&... states) requires ValidInvocationTypes<RetT, S0s...> {
+inline Future<RetT> Proclet<T>::run_async(RetT (*fn)(T &, S0s...),
+                                          S1s &&...states)
+  requires ValidInvocationTypes<RetT, S0s...>
+{
   using fn_states_checker [[maybe_unused]] =
       decltype(fn(std::declval<T &>(), std::forward<S1s>(states)...));
 
@@ -320,7 +276,7 @@ template <typename T>
 template <bool MigrEn, bool CPUMon, bool CPUSamp, typename RetT,
           typename... S0s, typename... S1s>
 inline Future<RetT> Proclet<T>::__run_async(RetT (*fn)(T &, S0s...),
-                                            S1s &&... states) {
+                                            S1s &&...states) {
   return nu::async([&, fn, ... states = std::forward<S1s>(states)]() mutable {
     return __run<MigrEn, CPUMon, CPUSamp>(fn, std::forward<S1s>(states)...);
   });
@@ -329,9 +285,9 @@ inline Future<RetT> Proclet<T>::__run_async(RetT (*fn)(T &, S0s...),
 template <typename T>
 template <bool MigrEn, bool CPUMon, bool CPUSamp, typename RetT,
           typename... S0s, typename... S1s>
-inline RetT Proclet<T>::run(
-    RetT (*fn)(T &, S0s...),
-    S1s &&... states) requires ValidInvocationTypes<RetT, S0s...> {
+inline RetT Proclet<T>::run(RetT (*fn)(T &, S0s...), S1s &&...states)
+  requires ValidInvocationTypes<RetT, S0s...>
+{
   using fn_states_checker [[maybe_unused]] =
       decltype(fn(std::declval<T &>(), std::move(states)...));
 
@@ -341,7 +297,7 @@ inline RetT Proclet<T>::run(
 template <typename T>
 template <bool MigrEn, bool CPUMon, bool CPUSamp, typename RetT,
           typename... S0s, typename... S1s>
-RetT Proclet<T>::__run(RetT (*fn)(T &, S0s...), S1s &&... states) {
+RetT Proclet<T>::__run(RetT (*fn)(T &, S0s...), S1s &&...states) {
   MigrationGuard caller_migration_guard;
 
   auto *caller_header = caller_migration_guard.header();
@@ -407,9 +363,9 @@ RetT Proclet<T>::__run(RetT (*fn)(T &, S0s...), S1s &&... states) {
 template <typename T>
 template <bool MigrEn, bool CPUMon, bool CPUSamp, typename RetT,
           typename... A0s, typename... A1s>
-inline Future<RetT> Proclet<T>::run_async(
-    RetT (T::*md)(A0s...),
-    A1s &&... args) requires ValidInvocationTypes<RetT, A0s...> {
+inline Future<RetT> Proclet<T>::run_async(RetT (T::*md)(A0s...), A1s &&...args)
+  requires ValidInvocationTypes<RetT, A0s...>
+{
   using md_args_checker [[maybe_unused]] =
       decltype((std::declval<T>().*(md))(std::move(args)...));
 
@@ -420,7 +376,7 @@ template <typename T>
 template <bool MigrEn, bool CPUMon, bool CPUSamp, typename RetT,
           typename... A0s, typename... A1s>
 inline Future<RetT> Proclet<T>::__run_async(RetT (T::*md)(A0s...),
-                                            A1s &&... args) {
+                                            A1s &&...args) {
   return nu::async([&, md, ... args = std::forward<A1s>(args)]() mutable {
     return __run<MigrEn, CPUMon, CPUSamp>(md, std::forward<A1s>(args)...);
   });
@@ -429,9 +385,9 @@ inline Future<RetT> Proclet<T>::__run_async(RetT (T::*md)(A0s...),
 template <typename T>
 template <bool MigrEn, bool CPUMon, bool CPUSamp, typename RetT,
           typename... A0s, typename... A1s>
-inline RetT Proclet<T>::run(
-    RetT (T::*md)(A0s...),
-    A1s &&... args) requires ValidInvocationTypes<RetT, A0s...> {
+inline RetT Proclet<T>::run(RetT (T::*md)(A0s...), A1s &&...args)
+  requires ValidInvocationTypes<RetT, A0s...>
+{
   using md_args_checker [[maybe_unused]] =
       decltype((std::declval<T>().*(md))(std::forward<A1s>(args)...));
 
@@ -441,7 +397,7 @@ inline RetT Proclet<T>::run(
 template <typename T>
 template <bool MigrEn, bool CPUMon, bool CPUSamp, typename RetT,
           typename... A0s, typename... A1s>
-inline RetT Proclet<T>::__run(RetT (T::*md)(A0s...), A1s &&... args) {
+inline RetT Proclet<T>::__run(RetT (T::*md)(A0s...), A1s &&...args) {
   MethodPtr<decltype(md)> method_ptr;
   method_ptr.ptr = md;
   return __run<MigrEn, CPUMon, CPUSamp>(
@@ -590,7 +546,8 @@ inline Proclet<T> make_proclet(std::tuple<As...> args_tuple, bool pinned,
   std::cout << "make_proclet_with_args()..." << std::endl;
   std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
   if (ip_hint.has_value()) {
-    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
+    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value())
+              << std::endl;
   }
   return std::apply(
       [&](auto &&...args) {
@@ -609,7 +566,8 @@ inline Future<Proclet<T>> make_proclet_async(std::tuple<As...> args_tuple,
   std::cout << "make_proclet_async_with_args()..." << std::endl;
   std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
   if (ip_hint.has_value()) {
-    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
+    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value())
+              << std::endl;
   }
   return nu::async(
       [=] { return make_proclet<T>(args_tuple, pinned, capacity, ip_hint); });
@@ -620,9 +578,10 @@ inline Proclet<T> make_proclet(bool pinned, std::optional<uint64_t> capacity,
                                std::optional<NodeIP> ip_hint) {
   // #ifdef DEBUG
   // std::cout << "make_proclet_no_args()..." << std::endl;
-  // std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
-  // if (ip_hint.has_value()) {
-  //   std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
+  // std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() <<
+  // std::endl; if (ip_hint.has_value()) {
+  //   std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value())
+  //   << std::endl;
   // }
   // #endif
 
@@ -637,7 +596,8 @@ inline Future<Proclet<T>> make_proclet_async(bool pinned,
   std::cout << "make_proclet_async_no_args()..." << std::endl;
   std::cout << "\tType: " << utils::TypeUtils::demangled_name<T>() << std::endl;
   if (ip_hint.has_value()) {
-    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value()) << std::endl;
+    std::cout << "\tIP: " << utils::IPUtils::uint32_to_str(ip_hint.value())
+              << std::endl;
   }
 
   return nu::async([=] { return make_proclet<T>(pinned, capacity, ip_hint); });

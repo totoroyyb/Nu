@@ -1,5 +1,6 @@
 #include <openssl/crypto.h>
 #include <sys/mman.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -218,9 +219,6 @@ int runtime_main_init(int argc, char **argv,
     std::cerr << "failed to start runtime" << std::endl;
     return ret;
   }
-
-// #ifdef DDB_SUPPORT
-// #endif
 
   return 0;
 }

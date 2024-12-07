@@ -1,7 +1,3 @@
-#ifdef DDB_SUPPORT
-#include "ddb/backtrace.hpp"
-#endif
-
 #include "nu/rpc_server.hpp"
 
 #include "nu/commons.hpp"
@@ -11,8 +7,6 @@
 #include "nu/runtime.hpp"
 #include "nu/utils/rpc.hpp"
 #include "nu/utils/utils.hpp"
-#include <iostream> 
-
 
 namespace nu {
 
@@ -84,26 +78,7 @@ void RPCServer::handler_fn(std::span<std::byte> args, RPCReturner *returner) {
     // Proclet server
     case kProcletCall: {
       args = args.subspan(sizeof(RPCReqType));
-#ifdef DDB_SUPPORT
-      DDB::Backtrace::extraction(
-        [&args]() -> DDB::DDBTraceMeta { 
-          auto meta = from_span<DDB::DDBTraceMeta>(args); 
-          args = args.subspan(sizeof(DDB::DDBTraceMeta));
-          return meta;
-        },
-        [&args, &returner]() {
-          get_runtime()->proclet_server()->parse_and_run_handler(args, returner);
-          args = args.subspan(sizeof(DDB::DDBTraceMeta));
-        }
-      );
-      // volatile __attribute__((used)) auto meta = from_span<DDBTraceMeta>(args);
-      // uint64_t magic = meta.magic;
-      // std::cout << "magic: " << magic << "tMetaMagic: " << tMetaMagic << std::endl;
-      // assert(magic == T_META_MATIC);
-      // args = args.subspan(sizeof(DDBTraceMeta));
-#else
       get_runtime()->proclet_server()->parse_and_run_handler(args, returner);
-#endif
       break;
     }
     case kGCStack: {

@@ -1,19 +1,23 @@
 #pragma once
 
+#include <net.h>
+#include <sync.h>
+#include <thread.h>
+
+#include <climits>
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <queue>
 #include <span>
 #include <vector>
-#include <climits>
-
-#include <net.h>
-#include <sync.h>
-#include <thread.h>
 
 #include "nu/commons.hpp"
 #include "nu/utils/counter.hpp"
+
+#ifdef DDB_SUPPORT
+#include "ddb/backtrace.hpp"
+#endif
 
 namespace nu {
 
@@ -192,7 +196,7 @@ class RPCFlow {
 
 class RPCClient {
  public:
-  ~RPCClient(){};
+  ~RPCClient() {};
 
   // Creates an RPC Client and establishes the underlying TCP connections.
   static std::unique_ptr<RPCClient> Dial(netaddr raddr);
