@@ -1,9 +1,11 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <span>
 #include <syncstream>
@@ -14,16 +16,16 @@ extern "C" {
 #include <runtime/membarrier.h>
 #include <runtime/timer.h>
 }
-#include <thread.h>
 #include <runtime.h>
+#include <thread.h>
 
 #include "nu/commons.hpp"
 #include "nu/ctrl_client.hpp"
 #include "nu/migrator.hpp"
-#include "nu/runtime.hpp"
 #include "nu/pressure_handler.hpp"
 #include "nu/proclet_mgr.hpp"
 #include "nu/proclet_server.hpp"
+#include "nu/runtime.hpp"
 #include "nu/utils/cond_var.hpp"
 #include "nu/utils/mutex.hpp"
 #include "nu/utils/scoped_lock.hpp"
@@ -986,7 +988,8 @@ void Migrator::forward_to_client(RPCReqForward &req) {
     req.returner.Return(req.rc);
   }
 #ifdef DDB_SUPPORT
-  delete (req.gc_ia_sstream->ss.span().data() - sizeof(RPCReqType) - sizeof(DDB::DDBTraceMeta));
+  delete (req.gc_ia_sstream->ss.span().data() - sizeof(RPCReqType) -
+          sizeof(DDB::DDBTraceMeta));
 #else
   delete (req.gc_ia_sstream->ss.span().data() - sizeof(RPCReqType));
 #endif

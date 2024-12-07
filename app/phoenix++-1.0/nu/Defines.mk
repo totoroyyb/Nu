@@ -46,7 +46,9 @@ CFLAGS = $(DEBUG) -Wall -O3 $(OS) $(NUMA) -DMMAP_POPULATE -fstrict-aliasing -Wst
          -DNCORES=$(NCORES) -T ${CALADAN}/base/base.ld
 LIBS = -L${CALADAN} -L${CALADAN}/bindings/cc -L${CALADAN}/rdma-core/build/lib/ -L${CALADAN}/rdma-core/build/lib/statics/ \
        -L${NU} -lnu -lrt++ -lruntime -lnet -lbase -l:libmlx5.a -l:libibverbs.a -lnl-3 -lnl-route-3 -lcrypto \
-       -lboost_program_options -lpthread -lnuma -ldl
+       -lboost_program_options -lpthread -lnuma \
+			 -lpaho-mqtt3c \
+			 -ldl
 INC =  -I../../include -I$(NU)/inc -I$(CALADAN)/inc -I$(CALADAN)/bindings/cc
 endif
 

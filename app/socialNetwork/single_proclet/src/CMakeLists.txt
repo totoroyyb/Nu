@@ -10,6 +10,7 @@ set(CMAKE_EXE_LINKER_FLAGS "-T ${CALADAN_DIR}/base/base.ld")
 
 execute_process(COMMAND nproc OUTPUT_VARIABLE NCORES)
 add_compile_definitions(NCORES=${NCORES})
+add_compile_definitions(DDB_SUPPORT)
 
 add_executable(
     main
@@ -60,4 +61,6 @@ target_link_libraries(
     nl-route-3
     pthread
     dl
+    # DDB Dependency
+    paho-mqtt3c
 )

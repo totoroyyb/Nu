@@ -35,15 +35,6 @@ class RPCReturner;
 class SlabAllocator;
 class Caladan;
 
-// #ifdef DDB_SUPPORT
-// struct DDBMetadata {
-//   uint32_t comm_ip;
-//   uint16_t comm_port;
-//   // readable hostname
-//   char host[NI_MAXHOST];
-// } __attribute__((packed));
-// #endif
-
 struct RPCReqReserveConns {
   RPCReqType rpc_type = kReserveConns;
   uint32_t dest_server_ip;
@@ -52,10 +43,6 @@ struct RPCReqReserveConns {
 struct RPCReqShutdown {
   RPCReqType rpc_type = kShutdown;
 };
-
-// #ifdef DDB_SUPPORT
-// extern DDBMetadata ddb_meta;
-// #endif
 
 class Runtime {
  public:
@@ -82,7 +69,7 @@ class Runtime {
   void init_as_server(uint32_t remote_ctrl_ip, lpid_t lpid, bool isol);
   template <typename Cls, typename... A0s, typename... A1s>
   bool run_within_proclet_env(void *proclet_base, void (*fn)(A0s...),
-                              A1s &&... args);
+                              A1s &&...args);
   SlabAllocator *switch_slab(SlabAllocator *slab);
   SlabAllocator *switch_to_runtime_slab();
   void *switch_stack(void *new_rsp);
@@ -142,7 +129,7 @@ class Runtime {
   Runtime(uint32_t remote_ctrl_ip, Mode mode, lpid_t lpid, bool isol);
   template <typename Cls, typename... A0s, typename... A1s>
   bool __run_within_proclet_env(void *proclet_base, void (*fn)(A0s...),
-                                       A1s &&... args);
+                                A1s &&...args);
   std::optional<MigrationGuard> __reattach_and_disable_migration(
       ProcletHeader *proclet_header);
   void destroy();
@@ -200,10 +187,6 @@ class MigrationGuard {
 int runtime_main_init(int argc, char **argv,
                       std::function<void(int argc, char **argv)> main_func);
 Runtime *get_runtime();
-
-// #ifdef DDB_SUPPORT
-// void populate_ddb_metadata(const std::string& ifa_name);
-// #endif
 
 }  // namespace nu
 

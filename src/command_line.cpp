@@ -1,9 +1,10 @@
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
+#include "nu/command_line.hpp"
+
 #include <numa.h>
 
-#include "nu/command_line.hpp"
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
 
 namespace nu {
 
@@ -54,17 +55,21 @@ void OptionsDesc::add_either_constraint(std::string opt1, std::string opt2) {
 }
 
 NuOptionsDesc::NuOptionsDesc(bool help) : OptionsDesc("Nu arguments", help) {
-  desc.add_options()
-    ("main,m", "execute the main function")
-    ("controller,t", boost::program_options::value(&ctrl_ip_str)->default_value("18.18.1.1"), "controller ip")
-    ("lpid,l", boost::program_options::value(&lpid)->required(), "logical process id (receive a free id if passing 0)")
-    ("nomemps", "don't react to memory pressure")
-    ("nocpups", "don't react to CPU pressure")
-    ("isol", "as an isolated node")
-  #ifdef DDB_SUPPORT
-    ("ddb", "enable DDB")
-    ("ddbip", boost::program_options::value(&ddb_ip)->default_value("10.10.1.1"), "ddb ip capture at runtime initialization");
-  #endif
+  desc.add_options()("main,m", "execute the main function")(
+      "controller,t",
+      boost::program_options::value(&ctrl_ip_str)->default_value("18.18.1.1"),
+      "controller ip")("lpid,l",
+                       boost::program_options::value(&lpid)->required(),
+                       "logical process id (receive a free id if passing 0)")(
+      "nomemps", "don't react to memory pressure")(
+      "nocpups", "don't react to CPU pressure")("isol", "as an isolated node")
+#ifdef DDB_SUPPORT
+      ("ddb", "enable DDB")(
+          "ddbip",
+          boost::program_options::value(&ddb_ip)->default_value("10.10.1.1"),
+          "ddb ip capture at runtime initialization")
+#endif
+      ;
 }
 
 CaladanOptionsDesc::CaladanOptionsDesc(int default_guaranteed,
@@ -79,14 +84,25 @@ CaladanOptionsDesc::CaladanOptionsDesc(int default_guaranteed,
       default_ip
           ? boost::program_options::value(&ip)->default_value(*default_ip)
           : boost::program_options::value(&ip);
-  desc.add_options()
-    ("conf,f", boost::program_options::value(&conf_path), "caladan configuration file")
-    ("kthreads,k", boost::program_options::value(&kthreads)->default_value(max_num_kthreads), "number of kthreads (if conf unspecified)")
-    ("guaranteed,g", boost::program_options::value(&guaranteed)->default_value(default_guaranteed), "number of guaranteed kthreads (if conf unspecified)")
-    ("spinning,p", boost::program_options::value(&spinning)->default_value(default_spinning), "number of spinning kthreads (if conf unspecified)")
-    ("ip,i", ip_opt, "IP address (if conf unspecified)")
-    ("netmask,n", boost::program_options::value(&netmask)->default_value("255.255.255.0"), "netmask (if conf unspecified)")
-    ("gateway,w", boost::program_options::value(&gateway)->default_value("18.18.1.1"), "gateway address (if conf unspecified)");
+  desc.add_options()("conf,f", boost::program_options::value(&conf_path),
+                     "caladan configuration file")(
+      "kthreads,k",
+      boost::program_options::value(&kthreads)->default_value(max_num_kthreads),
+      "number of kthreads (if conf unspecified)")(
+      "guaranteed,g",
+      boost::program_options::value(&guaranteed)
+          ->default_value(default_guaranteed),
+      "number of guaranteed kthreads (if conf unspecified)")(
+      "spinning,p",
+      boost::program_options::value(&spinning)->default_value(default_spinning),
+      "number of spinning kthreads (if conf unspecified)")(
+      "ip,i", ip_opt, "IP address (if conf unspecified)")(
+      "netmask,n",
+      boost::program_options::value(&netmask)->default_value("255.255.255.0"),
+      "netmask (if conf unspecified)")(
+      "gateway,w",
+      boost::program_options::value(&gateway)->default_value("18.18.1.1"),
+      "gateway address (if conf unspecified)");
   add_either_constraint("conf", "kthreads");
   add_either_constraint("conf", "guaranteed");
   add_either_constraint("conf", "spinning");

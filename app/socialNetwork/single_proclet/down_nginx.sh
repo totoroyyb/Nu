@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker ps | awk '{print $1}' | grep -v CON | xargs docker stop
-docker ps | awk '{print $1}' | grep -v CON | xargs docker kill
+sudo docker ps | awk '{print $1}' | grep -v CON | xargs sudo docker stop
+sudo docker ps | awk '{print $1}' | grep -v CON | xargs sudo docker kill

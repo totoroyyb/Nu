@@ -52,9 +52,7 @@ inline ConnAddrPair RPCServerWorker::GetRPCConnAddrPair() {
   return ConnAddrPair{GetLocalAddr(), GetRemoteAddr()};
 }
 
-inline netaddr RPCServerWorker::GetLocalAddr() {
-  return this->c_->LocalAddr();
-}
+inline netaddr RPCServerWorker::GetLocalAddr() { return this->c_->LocalAddr(); }
 
 inline netaddr RPCServerWorker::GetRemoteAddr() {
   return this->c_->RemoteAddr();
@@ -70,8 +68,7 @@ inline void RPCFlow::Call(std::span<const std::byte> src, RPCCompletion *c) {
 
 inline RPCReturner::RPCReturner(void *rpc_server, std::size_t completion_data)
     : completion_data_(completion_data) {
-  auto server =
-      reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server);
+  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server);
   this->local_addr = server->GetLocalAddr();
   this->remote_addr = server->GetRemoteAddr();
   this->rpc_server_ = rpc_server;
@@ -93,30 +90,49 @@ inline void RPCReturner::Return(RPCReturnCode rc) {
 }
 
 inline ConnAddrPair RPCReturner::GetRPCAddrPair() {
-  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_); 
+  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_);
   return server->GetRPCConnAddrPair();
 }
 
 inline netaddr RPCReturner::GetLocalAddr() {
-  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_); 
+  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_);
   return server->GetLocalAddr();
 }
 
 inline netaddr RPCReturner::GetRemoteAddr() {
-  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_); 
+  auto server = reinterpret_cast<rpc_internal::RPCServerWorker *>(rpc_server_);
   return server->GetRemoteAddr();
 }
 
 inline RPCReturnCode RPCClient::Call(std::span<const std::byte> args,
                                      RPCCallback &&callback) {
+#ifdef DDB_SUPPORT
+  DDB::DDBTraceMeta meta;
+  DDB::get_trace_meta(&meta);
+
+  auto ddb_span = to_span(meta);
+
+  std::vector<std::byte> args_with_ddb;
+  args_with_ddb.reserve(ddb_span.size() + args.size());
+  args_with_ddb.insert(args_with_ddb.end(), ddb_span.begin(), ddb_span.end());
+  args_with_ddb.insert(args_with_ddb.end(), args.begin(), args.end());
+
+  std::span<const std::byte> full_args(args_with_ddb);
+
+  auto out_meta = from_span<DDB::DDBTraceMeta>(full_args);
+  BUG_ON(!out_meta.valid());
+#else
+  std::span<const std::byte> full_args = args;
+#endif
+
   RPCCompletion completion(std::move(callback));
   {
     rt::Preempt p;
     if (!p.IsHeld()) {
       rt::PreemptGuardAndPark guard(&p);
-      flows_[p.get_cpu()]->Call(args, &completion);
+      flows_[p.get_cpu()]->Call(full_args, &completion);
     } else {
-      flows_[p.get_cpu()]->Call(args, &completion);
+      flows_[p.get_cpu()]->Call(full_args, &completion);
     }
   }
   return completion.get_return_code();
@@ -124,14 +140,33 @@ inline RPCReturnCode RPCClient::Call(std::span<const std::byte> args,
 
 inline RPCReturnCode RPCClient::Call(std::span<const std::byte> args,
                                      RPCReturnBuffer *return_buf) {
+#ifdef DDB_SUPPORT
+  DDB::DDBTraceMeta meta;
+  DDB::get_trace_meta(&meta);
+
+  auto ddb_span = to_span(meta);
+
+  std::vector<std::byte> args_with_ddb;
+  args_with_ddb.reserve(ddb_span.size() + args.size());
+  args_with_ddb.insert(args_with_ddb.end(), ddb_span.begin(), ddb_span.end());
+  args_with_ddb.insert(args_with_ddb.end(), args.begin(), args.end());
+
+  std::span<const std::byte> full_args(args_with_ddb);
+
+  auto out_meta = from_span<DDB::DDBTraceMeta>(full_args);
+  BUG_ON(!out_meta.valid());
+#else
+  std::span<const std::byte> full_args = args;
+#endif
+
   RPCCompletion completion(return_buf);
   {
     rt::Preempt p;
     if (!p.IsHeld()) {
       rt::PreemptGuardAndPark guard(&p);
-      flows_[p.get_cpu()]->Call(args, &completion);
+      flows_[p.get_cpu()]->Call(full_args, &completion);
     } else {
-      flows_[p.get_cpu()]->Call(args, &completion);
+      flows_[p.get_cpu()]->Call(full_args, &completion);
     }
   }
   return completion.get_return_code();

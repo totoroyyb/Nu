@@ -12,21 +12,6 @@ namespace nu {
 #error Must indicate number of CPU cores
 #endif
 
-// #ifdef DDB_SUPPORT
-// /// @brief  Added magic number for testing RPCRewqProcletCallDebugMeta
-// constexpr static uint64_t tMetaMagic = 12345;
-
-// /// @brief  Added data structure for backtrace
-// struct RPCReqProcletCallDebugMeta {
-//   uint64_t magic;
-//   uint32_t caller_comm_ip;
-//   uintptr_t rip;
-//   uintptr_t rsp;
-//   uintptr_t rbp;
-//   pid_t pid;
-// } __attribute__((packed));
-// #endif
-
 using ProcletID = uint64_t;
 using lpid_t = uint16_t;
 using SlabId_t = uint32_t;
@@ -48,7 +33,6 @@ struct Resource {
   std::string to_string() const {
     return "cores: " + std::to_string(cores) +
            ", mem_mbs: " + std::to_string(mem_mbs);
-
   }
 };
 
@@ -143,7 +127,7 @@ void move_append_vector(std::vector<T> &dest, std::vector<T> &src);
 template <class T>
 concept BoolIntegral = requires {
   requires std::is_same_v<T, std::bool_constant<false>> ||
-      std::is_same_v<T, std::bool_constant<true>>;
+               std::is_same_v<T, std::bool_constant<true>>;
 };
 
 #define Aligned(type, alignment)            \
