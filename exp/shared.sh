@@ -49,20 +49,19 @@ function start_iokerneld() {
 
 function start_ctrl() {
   srv_idx=$1
-  ssh $(ssh_ip $srv_idx) "sudo stdbuf -o0 $NU_DIR/bin/ctrl_main" &
-  # dir_path=$NU_DIR/bin
-  # file_path=$dir_path/ctrl_main
-  # nu_libs_name=".nu_libs_$BASHPID"
-  # pushd $dir_path
-  # rm -rf $nu_libs_name
-  # mkdir -p $nu_libs_name
-  # cp $(ldd $file_path | grep "=>" | awk '{print $3}' | xargs) $nu_libs_name
-  # # ssh $(ssh_ip $srv_idx) "cd $dir_path; rm -rf $nu_libs_name"
-  # scp -r $nu_libs_name $(ssh_ip $srv_idx):$dir_path/
-  # popd
-  #
-  # echo "START CTRL"
-  # ssh $(ssh_ip $srv_idx) "cd $dir_path; sudo LD_LIBRARY_PATH=$nu_libs_name stdbuf -o0 $file_path" &
+  # ssh $(ssh_ip $srv_idx) "sudo stdbuf -o0 $NU_DIR/bin/ctrl_main" &
+
+  dir_path=$NU_DIR/bin
+  file_path=$dir_path/ctrl_main
+  nu_libs_name=".nu_libs_$BASHPID"
+  pushd $dir_path
+  rm -rf $nu_libs_name
+  mkdir -p $nu_libs_name
+  cp $(ldd $file_path | grep "=>" | awk '{print $3}' | xargs) $nu_libs_name
+  scp -r $nu_libs_name $(ssh_ip $srv_idx):$dir_path/
+  popd
+
+  ssh $(ssh_ip $srv_idx) "cd $dir_path; sudo LD_LIBRARY_PATH=$nu_libs_name stdbuf -o0 $file_path" &
 }
 
 function __start_server() {
@@ -102,6 +101,113 @@ function __start_server() {
   fi
 }
 
+function __start_server_with_gdb() {
+  file_path=$(executable_file_path $1)
+  srv_idx=$2
+  lpid=$3
+  main=$4
+  if [[ $5 -eq 0 ]]; then
+    ks_cmd=""
+  else
+    ks_cmd="-k $5"
+  fi
+  if [[ $6 -eq 0 ]]; then
+    spin_ks=0
+  else
+    spin_ks=$6
+  fi
+  if [[ $7 -eq 0 ]]; then
+    isol_cmd=""
+  else
+    isol_cmd="--isol"
+  fi
+  ip=$(caladan_srv_ip $srv_idx)
+  nu_libs_name=".nu_libs_$BASHPID"
+  rm -rf $nu_libs_name
+  mkdir $nu_libs_name
+  cp $(ldd $file_path | grep "=>" | awk '{print $3}' | xargs) $nu_libs_name
+  ssh $(ssh_ip $srv_idx) "rm -rf $nu_libs_name"
+  scp -r $nu_libs_name $(ssh_ip $srv_idx):$(pwd)/
+
+  GDB_CMD="gdb -q --interpreter=mi3 -ex 'handle SIGUSR1 SIGUSR2 nostop noprint' -ex 'set mi-async on' -ex 'run' --args"
+
+  if [[ $main -eq 0 ]]; then
+    ssh $(ssh_ip $srv_idx) "cd $(pwd); 
+      sudo LD_LIBRARY_PATH=$nu_libs_name stdbuf -o0 $GDB_CMD $file_path -l $lpid -i $ip $ks_cmd -p $spin_ks $isol_cmd"
+  else
+    ssh $(ssh_ip $srv_idx) "cd $(pwd);
+      sudo LD_LIBRARY_PATH=$nu_libs_name stdbuf -o0 $GDB_CMD $file_path -m -l $lpid -i $ip $ks_cmd -p $spin_ks $isol_cmd"
+  fi
+}
+
+function __start_server_with_ddb() {
+  file_path=$(executable_file_path $1)
+  srv_idx=$2
+  lpid=$3
+  main=$4
+  if [[ $5 -eq 0 ]]; then
+    ks_cmd=""
+  else
+    ks_cmd="-k $5"
+  fi
+  if [[ $6 -eq 0 ]]; then
+    spin_ks=0
+  else
+    spin_ks=$6
+  fi
+  if [[ $7 -eq 0 ]]; then
+    isol_cmd=""
+  else
+    isol_cmd="--isol"
+  fi
+  ip=$(caladan_srv_ip $srv_idx)
+  nu_libs_name=".nu_libs_$BASHPID"
+  rm -rf $nu_libs_name
+  mkdir $nu_libs_name
+  cp $(ldd $file_path | grep "=>" | awk '{print $3}' | xargs) $nu_libs_name
+  ssh $(ssh_ip $srv_idx) "rm -rf $nu_libs_name"
+  scp -r $nu_libs_name $(ssh_ip $srv_idx):$(pwd)/
+
+  DDB_ARGS="--ddb --ddbip $(ssh_ip $srv_idx)"
+
+  if [[ $main -eq 0 ]]; then
+    ssh $(ssh_ip $srv_idx) "cd $(pwd); 
+      sudo LD_LIBRARY_PATH=$nu_libs_name stdbuf -o0 $file_path -l $lpid -i $ip $ks_cmd -p $spin_ks $isol_cmd $DDB_ARGS"
+  else
+    ssh $(ssh_ip $srv_idx) "cd $(pwd);
+      sudo LD_LIBRARY_PATH=$nu_libs_name stdbuf -o0 $file_path -m -l $lpid -i $ip $ks_cmd -p $spin_ks $isol_cmd $DDB_ARGS"
+  fi
+}
+
+# Attach gdb before running
+function start_server_with_gdb() {
+  __start_server_with_gdb $1 $2 $3 0 $4 $5 $6 0
+}
+
+function start_main_server_with_gdb() {
+  __start_server_with_gdb $1 $2 $3 1 $4 $5 $6 0
+}
+
+function start_main_server_isol_with_gdb() {
+  __start_server_with_gdb $1 $2 $3 1 $4 $5 $6 1
+}
+
+# Enable DDB and provide IP
+function start_server_with_ddb() {
+  __start_server_with_ddb $1 $2 $3 0 $4 $5 $6 0
+}
+
+function start_main_server_with_ddb() {
+  set -x
+  __start_server_with_ddb $1 $2 $3 1 $4 $5 $6 0
+  set +x
+}
+
+function start_main_server_isol_with_ddb() {
+  __start_server_with_ddb $1 $2 $3 1 $4 $5 $6 1
+}
+
+# Regular startup without any debugger attached
 function start_server() {
   __start_server $1 $2 $3 0 $4 $5 $6 0
 }
@@ -201,7 +307,11 @@ function cleanup() {
                           sudo pkill -9 kmeans;
                           sudo pkill -9 python3;
                           sudo pkill -9 BackEndService;
-                          sudo pkill -9 bench;"
+                          sudo pkill -9 bench;
+                          sudo pkill -9 -f 'gdb -q --interpreter=mi3';
+                          sudo pkill -9 ddb;
+                          sudo pkill -9 mosquitto;
+                          sudo pkill -9 cat;"
     if [ -n "$nic_dev" ]; then
       ssh $(ssh_ip $i) "sudo bridge fdb | grep $nic_dev | awk '{print $1}' | \
                                    xargs -I {} bash -c \"sudo bridge fdb delete {} dev $nic_dev\""
