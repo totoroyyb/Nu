@@ -1,12 +1,16 @@
 #!/bin/bash
 
 ### Usage
-# ./run.sh <LOG_PREFIX> <DEBUGGER_ATTACH>
+# ./run.sh <LOG_PREFIX> <DEBUGGER_ATTACH> <ENABLE_BKPTS>
 #
 # <LOG_PREFIX> is used for log files to distinguish between experiments
+#
 # <DEBUGGER_ATTACH> == 1 means it executes with gdb attached
 # <DEBUGGER_ATTACH> == 2 means it executes with ddb attached
 # <DEBUGGER_ATTACH> with other values means it executes without any debugger attached
+#
+# <ENABLE_BKPTS> == 1 means it inserts breakpoints
+# <ENABLE_BKPTS> with other values means it executes normally.
 
 source ../../shared.sh
 
@@ -96,7 +100,8 @@ for num_srvs in $(
     mkfifo $EMPTY_PIPE
     pushd $DDB_DIR
     uv sync
-    cat $EMPTY_PIPE | uv run -- ddb $DDB_CONF/dbg_nu_c6525_exp.yaml >$DIR/logs/.ddb.debugger.tmp 2>&1 &
+    # cat $EMPTY_PIPE | uv run -- ddb $DDB_CONF/dbg_nu_c6525_exp.yaml >$DIR/logs/.ddb.debugger.tmp 2>&1 &
+    cat $EMPTY_PIPE | uv run -- ddb $DDB_CONF/dbg_nu_c6525_exp.yaml >/dev/null 2>&1 &
     DDB_JOB=$!
     echo "Waiting DDB to be ready..."
     sleep 3
@@ -109,7 +114,11 @@ for num_srvs in $(
   for srv_idx in $(seq 1 $num_srvs); do
     if [[ $srv_idx -ne $num_srvs ]]; then
       if [[ $2 -eq 1 ]]; then
-        start_server_with_gdb build/src/main $srv_idx $LPID >$DIR/logs/.gdb.$srv_idx.tmp 2>&1 &
+        if [[ $3 -eq 1 ]]; then
+          start_server_with_gdb_bkpts build/src/main $srv_idx $LPID >$DIR/logs/.bkpts.gdb.$srv_idx.tmp 2>&1 &
+        else
+          start_server_with_gdb build/src/main $srv_idx $LPID >$DIR/logs/.gdb.$srv_idx.tmp 2>&1 &
+        fi
       elif [[ $2 -eq 2 ]]; then
         start_server_with_ddb build/src/main $srv_idx $LPID >$DIR/logs/.ddb.$srv_idx.tmp 2>&1 &
       else
@@ -118,7 +127,11 @@ for num_srvs in $(
     else
       sleep 5
       if [[ $2 -eq 1 ]]; then
-        start_main_server_with_gdb build/src/main $srv_idx $LPID >$DIR/logs/.gdb.tmp 2>&1 &
+        if [[ $3 -eq 1 ]]; then
+          start_server_with_gdb_bkpts build/src/main $srv_idx $LPID >$DIR/logs/.bkpts.gdb.$srv_idx.tmp 2>&1 &
+        else
+          start_main_server_with_gdb build/src/main $srv_idx $LPID >$DIR/logs/.gdb.tmp 2>&1 &
+        fi
       elif [[ $2 -eq 2 ]]; then
         start_main_server_with_ddb build/src/main $srv_idx $LPID >$DIR/logs/.ddb.tmp 2>&1 &
       else
