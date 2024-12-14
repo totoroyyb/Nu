@@ -106,12 +106,14 @@ template <typename RT = void, class RPCCallable>
 __attribute__((noinline)) static RT extraction(
     std::function<DDBTraceMeta()> extractor, RPCCallable&& rpc_callable) {
   DDBTraceMeta meta;
+  asm volatile("" : "+m"(meta));  // Force compiler to assume meta is modified
   if (extractor) {
     meta = extractor();
   }
-  if (meta.magic != T_META_MATIC) {
+  if (!meta.valid()) {
     std::cout << "WARN: Magic doesn't match" << std::endl;
   }
+
   if constexpr (!std::is_void_v<RT>) {
     return rpc_callable();
   } else {

@@ -5,13 +5,13 @@
 
 #include <atomic>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <nu/commons.hpp>
 #include <nu/utils/perf.hpp>
 #include <random>
 #include <span>
-#include <iostream>
 
 #include "../gen-cpp/BackEndService.h"
 #include "../gen-cpp/social_network_types.h"
@@ -27,8 +27,8 @@ constexpr static double kTotalMops = 10;
 constexpr static uint32_t kNumEntries = 1;
 constexpr static netaddr kClientAddrs[] = {
     {.ip = MAKE_IP_ADDR(18, 18, 1, 249), .port = 9000},
-    // {.ip = MAKE_IP_ADDR(18, 18, 1, 250), .port = 9000},
-    // {.ip = MAKE_IP_ADDR(18, 18, 1, 251), .port = 9000},
+    {.ip = MAKE_IP_ADDR(18, 18, 1, 250), .port = 9000},
+    {.ip = MAKE_IP_ADDR(18, 18, 1, 251), .port = 9000},
     // {.ip = MAKE_IP_ADDR(18, 18, 1, 252), .port = 9000},
     // {.ip = MAKE_IP_ADDR(18, 18, 1, 253), .port = 9000},
 };

@@ -1,14 +1,17 @@
+#include <runtime.h>
+#include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/transport/TSocket.h>
+#include <thrift/transport/TTransportUtils.h>
+
 #include <atomic>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <nu/commons.hpp>
 #include <nu/utils/perf.hpp>
 #include <random>
-#include <runtime.h>
-#include <thrift/protocol/TBinaryProtocol.h>
-#include <thrift/transport/TSocket.h>
-#include <thrift/transport/TTransportUtils.h>
+#include <span>
 
 #include "../gen-cpp/BackEndService.h"
 #include "../gen-cpp/social_network_types.h"
@@ -19,9 +22,17 @@ using namespace apache::thrift::protocol;
 using namespace apache::thrift::transport;
 
 constexpr static uint32_t kNumThreads = 200;
-constexpr static double kTargetMops = 0.1;
-constexpr static double kTotalMops = 1;
-constexpr static uint32_t kNumEntries = 1;
+constexpr static double kTargetMops = 3.1;
+constexpr static double kTotalMops = 10;
+constexpr static uint32_t kNumEntries = 7;
+constexpr static netaddr kClientAddrs[] = {
+    {.ip = MAKE_IP_ADDR(18, 18, 1, 249), .port = 9000},
+    {.ip = MAKE_IP_ADDR(18, 18, 1, 250), .port = 9000},
+    {.ip = MAKE_IP_ADDR(18, 18, 1, 251), .port = 9000},
+    // {.ip = MAKE_IP_ADDR(18, 18, 1, 252), .port = 9000},
+    // {.ip = MAKE_IP_ADDR(18, 18, 1, 253), .port = 9000},
+};
+
 constexpr static uint32_t kEntryPort = 9091;
 constexpr static uint32_t kUserTimelinePercent = 60;
 constexpr static uint32_t kHomeTimelinePercent = 30;
@@ -31,8 +42,9 @@ constexpr static uint32_t kFollowPercent =
     100 - kUserTimelinePercent - kHomeTimelinePercent - kComposePostPercent -
     kRemovePostsPercent;
 constexpr static uint32_t kNumUsers = 962;
-constexpr static char kCharSet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                   "abcdefghijklmnopqrstuvwxyz";
+constexpr static char kCharSet[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz";
 constexpr static uint32_t kTextLen = 64;
 constexpr static uint32_t kUrlLen = 64;
 constexpr static uint32_t kMaxNumMentionsPerText = 2;
@@ -45,7 +57,7 @@ std::string get_entry_ip(int idx) {
 }
 
 class ClientPtr {
-public:
+ public:
   ClientPtr(const std::string &ip) {
     socket.reset(new TSocket(ip, kEntryPort));
     transport.reset(new TFramedTransport(socket));
@@ -56,7 +68,7 @@ public:
 
   social_network::BackEndServiceClient *operator->() { return client.get(); }
 
-private:
+ private:
   std::shared_ptr<TTransport> socket;
   std::shared_ptr<TTransport> transport;
   std::shared_ptr<TProtocol> protocol;
@@ -65,7 +77,10 @@ private:
 
 struct socialNetworkThreadState : nu::PerfThreadState {
   socialNetworkThreadState(const std::string &ip)
-      : client(ip), rd(), gen(rd()), dist_1_100(1, 100),
+      : client(ip),
+        rd(),
+        gen(rd()),
+        dist_1_100(1, 100),
         dist_1_numusers(1, kNumUsers),
         dist_0_charsetsize(0, std::size(kCharSet) - 2),
         dist_0_maxnummentions(0, kMaxNumMentionsPerText),
@@ -118,7 +133,7 @@ struct FollowReq : nu::PerfRequest {
 };
 
 class SocialNetworkAdapter : public nu::PerfAdapter {
-public:
+ public:
   std::unique_ptr<nu::PerfThreadState> create_thread_state() {
     static std::atomic<uint32_t> num_threads = 0;
     uint32_t tid = num_threads++;
@@ -148,7 +163,8 @@ public:
     return gen_follow_req(state);
   }
 
-  bool serve_req(nu::PerfThreadState *perf_state, const nu::PerfRequest *perf_req) {
+  bool serve_req(nu::PerfThreadState *perf_state,
+                 const nu::PerfRequest *perf_req) {
     try {
       auto *state = reinterpret_cast<socialNetworkThreadState *>(perf_state);
       auto *user_timeline_req =
@@ -197,9 +213,9 @@ public:
     return true;
   }
 
-private:
-  std::unique_ptr<UserTimelineRequest>
-  gen_user_timeline_req(socialNetworkThreadState *state) {
+ private:
+  std::unique_ptr<UserTimelineRequest> gen_user_timeline_req(
+      socialNetworkThreadState *state) {
     auto *user_timeline_req = new UserTimelineRequest();
     user_timeline_req->user_id = (state->dist_1_numusers)(state->gen);
     user_timeline_req->start = (state->dist_1_100)(state->gen);
@@ -207,8 +223,8 @@ private:
     return std::unique_ptr<UserTimelineRequest>(user_timeline_req);
   }
 
-  std::unique_ptr<HomeTimelineRequest>
-  gen_home_timeline_req(socialNetworkThreadState *state) {
+  std::unique_ptr<HomeTimelineRequest> gen_home_timeline_req(
+      socialNetworkThreadState *state) {
     auto *home_timeline_req = new HomeTimelineRequest();
     home_timeline_req->user_id = (state->dist_1_numusers)(state->gen);
     home_timeline_req->start = (state->dist_1_100)(state->gen);
@@ -216,8 +232,8 @@ private:
     return std::unique_ptr<HomeTimelineRequest>(home_timeline_req);
   }
 
-  std::unique_ptr<ComposePostRequest>
-  gen_compose_post_req(socialNetworkThreadState *state) {
+  std::unique_ptr<ComposePostRequest> gen_compose_post_req(
+      socialNetworkThreadState *state) {
     auto *compose_post_req = new ComposePostRequest();
     compose_post_req->user_id = (state->dist_1_numusers)(state->gen);
     compose_post_req->username =
@@ -242,8 +258,8 @@ private:
     return std::unique_ptr<ComposePostRequest>(compose_post_req);
   }
 
-  std::unique_ptr<RemovePostsRequest>
-  gen_remove_posts_req(socialNetworkThreadState *state) {
+  std::unique_ptr<RemovePostsRequest> gen_remove_posts_req(
+      socialNetworkThreadState *state) {
     auto *remove_posts_req = new RemovePostsRequest();
     remove_posts_req->user_id = (state->dist_1_numusers)(state->gen);
     remove_posts_req->start = 0;
@@ -268,12 +284,15 @@ private:
 };
 
 void do_work() {
+  std::cout << "start do_work" << std::endl;
   SocialNetworkAdapter social_network_adapter;
   nu::Perf perf(social_network_adapter);
   auto duration_us = kTotalMops / kTargetMops * 1000 * 1000;
   auto warmup_us = duration_us;
-  perf.run(kNumThreads, kTargetMops, duration_us, warmup_us,
-           50 * nu::kOneMilliSecond);
+  std::cout << "before multiclients" << std::endl;
+  perf.run_multi_clients(std::span(kClientAddrs), kNumThreads,
+                         kTargetMops / std::size(kClientAddrs), duration_us,
+                         warmup_us, 10 * nu::kOneMilliSecond);
   std::cout << "real_mops, avg_lat, 50th_lat, 90th_lat, 95th_lat, 99th_lat, "
                "99.9th_lat"
             << std::endl;
