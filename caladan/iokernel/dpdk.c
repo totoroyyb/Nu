@@ -263,15 +263,15 @@ int dpdk_late_init(void)
 		return -1;
 	}
 
-  // uint16_t nb_ports = rte_eth_dev_count_avail();
-  // for (uint16_t port_id = 0; port_id < nb_ports; port_id++) {
-  //     struct rte_eth_dev_info dev_info;
-  //     rte_eth_dev_info_get(port_id, &dev_info);
-  //     printf("Port ID: %u, Driver: %s, PCI Address: %s\n",
-  //             port_id,
-  //             dev_info.driver_name,
-  //             dev_info.device->name);
-  // }
-  //
+	uint16_t nb_ports = rte_eth_dev_count_avail();
+	for (uint16_t port_id = 0; port_id < nb_ports; port_id++) {
+		struct rte_eth_dev_info dev_info;
+		rte_eth_dev_info_get(port_id, &dev_info);
+		printf("Port ID: %u, Driver: %s, PCI Address: %s\n",
+				port_id,
+				dev_info.driver_name,
+				dev_info.device->name);
+	}
+  
 	return 0;
 }

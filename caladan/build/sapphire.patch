@@ -7,7 +7,7 @@ index 48812f1d..0413f065 100644
  {
  	/* initialize port */
 -	dp.port = 0;
-+	dp.port = 1;
++	dp.port = 0;
  	if (dpdk_port_init(dp.port, dp.rx_mbuf_pool) != 0) {
  		log_err("dpdk: cannot init port %"PRIu8 "\n", dp.port);
  		return -1;
@@ -20,7 +20,7 @@ index 71c1b288..8ca257c6 100644
  
  	for (i = 0; dev_list[i]; i++) {
 -		if (strncmp(ibv_get_device_name(dev_list[i]), "mlx5", 4))
-+		if (strncmp(ibv_get_device_name(dev_list[i]), "mlx5_0", 6))
++		if (strncmp(ibv_get_device_name(dev_list[i]), "mlx5_1", 6))
  			continue;
  
  		if (!nic_pci_addr_str)
@@ -46,7 +46,7 @@ index bf447acb..4372f008 100644
  
  	for (i = 0; dev_list[i]; i++) {
 -		if (strncmp(ibv_get_device_name(dev_list[i]), "mlx5", 4))
-+		if (strncmp(ibv_get_device_name(dev_list[i]), "mlx5_0", 6))
++		if (strncmp(ibv_get_device_name(dev_list[i]), "mlx5_1", 6))
  			continue;
  
  		if (!cfg_pci_addr_specified)
